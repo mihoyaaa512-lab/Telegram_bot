@@ -11,8 +11,8 @@ from datetime import datetime
 from urllib.parse import quote
 
 # ====== НАСТРОЙКИ ======
-TOKEN = os.environ.get('8418251202:AAGbFvhQZoZrT6HDjPBhYKnx4dp98pmik9w')
-MY_CHAT_ID = os.environ.get('1038593672')
+TOKEN = os.environ.get('TOKEN')
+MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
 
 # Проверка: если токен не задан — выходим с понятной ошибкой
 if not TOKEN:
