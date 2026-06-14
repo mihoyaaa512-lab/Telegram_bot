@@ -2,4 +2,3 @@ pyTelegramBotAPI
 requests
 beautifulsoup4
 schedule
-cloudscraper
