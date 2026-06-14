@@ -1,0 +1,598 @@
+{
+  "timestamp": "2026-06-14T20:30:08.440308",
+  "basic_info": {
+    "name": "Взбешённый",
+    "level": 80,
+    "class": "Воин",
+    "race": "Ночнорожденный",
+    "ilvl": 239,
+    "category": "4-я (+++) Категория",
+    "achievementPoints": 3330,
+    "guild": "Красавчики"
+  },
+  "equipment": [
+    {
+      "slot": "head",
+      "name": "Боевой шлем вестника войны",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "neck",
+      "name": "Подвеска мощи Расколотого Солнца",
+      "ilvl": 251,
+      "quality": 4
+    },
+    {
+      "slot": "shoulders",
+      "name": "Латные наплечники завоеваний Адского Крика",
+      "ilvl": 232,
+      "quality": 4
+    },
+    {
+      "slot": "back",
+      "name": "Плащ хищной тени",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "chest",
+      "name": "Кираса вестника войны",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "body",
+      "name": "Превосходная лиловая рубашка",
+      "ilvl": 1,
+      "quality": 4
+    },
+    {
+      "slot": "wrists",
+      "name": "Нарукавники проклятого братства",
+      "ilvl": 236,
+      "quality": 4
+    },
+    {
+      "slot": "hands",
+      "name": "Рукавицы Военного совершенства",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "waist",
+      "name": "Ремень Кузницы смерти",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "legs",
+      "name": "Ножные латы завоеваний Адского Крика",
+      "ilvl": 232,
+      "quality": 4
+    },
+    {
+      "slot": "feet",
+      "name": "Ботфорты-ледоступы",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "finger1",
+      "name": "Символ воителя",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "finger2",
+      "name": "Кольцо зеркальной души",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "trinket1",
+      "name": "Вечное пламя",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "trinket2",
+      "name": "Знамя победы",
+      "ilvl": 200,
+      "quality": 4
+    },
+    {
+      "slot": "mainhand",
+      "name": "Молот наару",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "offhand",
+      "name": "Топор лордов Гронна",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "ranged",
+      "name": "Багровая звезда",
+      "ilvl": 245,
+      "quality": 4
+    }
+  ],
+  "stats": {
+    "strength": 1934,
+    "agility": 531,
+    "stamina": 1773,
+    "intellect": 50,
+    "spirit": 76,
+    "armor": 13524,
+    "blockPct": 5,
+    "dodgePct": 9.27413,
+    "parryPct": 7,
+    "critPct": 46.3122,
+    "rangedCritPct": 41.3122,
+    "spellCritPct": 19.6271,
+    "attackPower": 5812,
+    "rangedAttackPower": 1950,
+    "spellPower": 0,
+    "resilience": 0,
+    "hitRating": 178,
+    "hasteRating": 0,
+    "armorPenetration": 1439,
+    "spellPenetration": 0,
+    "manaRegen": 0,
+    "defenseRating": 400,
+    "expertiseRating": 25
+  },
+  "professions": [
+    {
+      "name": "Ювелирное дело",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Инженерное дело",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Алхимия",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Кузнечное дело",
+      "skill": 400,
+      "max": 450
+    },
+    {
+      "name": "Рыбная ловля",
+      "skill": 431,
+      "max": 450
+    },
+    {
+      "name": "Кулинария",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Первая помощь",
+      "skill": 430,
+      "max": 450
+    }
+  ],
+  "pvp": {
+    "rank": 0,
+    "rating": 0,
+    "week_games": 0,
+    "week_wins": 0,
+    "total_games": 0,
+    "total_wins": 0
+  },
+  "arena": [
+    {
+      "slot": 1,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    },
+    {
+      "slot": 2,
+      "seasonGames": 82,
+      "seasonWins": 22,
+      "personalRating": 954
+    },
+    {
+      "slot": 6,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    }
+  ],
+  "pve": {
+    "22": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 1,
+      "progressed": 3,
+      "percentage": 75
+    },
+    "23": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 0,
+      "progressed": 3,
+      "percentage": 75
+    },
+    "27": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 3,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "28": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "29": {
+      "map_name": "Логово Груула",
+      "difficulty": 1,
+      "progressed": 2,
+      "percentage": 100
+    },
+    "30": {
+      "map_name": "Логово Магтеридона",
+      "difficulty": 1,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "31": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 1,
+      "progressed": 5,
+      "percentage": 100
+    },
+    "32": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 0,
+      "progressed": 5,
+      "percentage": 100
+    },
+    "33": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 1,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "34": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 0,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "35": {
+      "map_name": "Каражан",
+      "difficulty": 0,
+      "progressed": 8,
+      "percentage": 72.72727272727273
+    },
+    "36": {
+      "map_name": "Ульдуар",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "37": {
+      "map_name": "Ульдуар",
+      "difficulty": 0,
+      "progressed": 11,
+      "percentage": 78.57142857142857
+    },
+    "38": {
+      "map_name": "Наксрамас",
+      "difficulty": 3,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "39": {
+      "map_name": "Наксрамас",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "40": {
+      "map_name": "Око вечности",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "41": {
+      "map_name": "Око вечности",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "42": {
+      "map_name": "Наксрамас",
+      "difficulty": 1,
+      "progressed": 10,
+      "percentage": 66.66666666666666
+    },
+    "43": {
+      "map_name": "Наксрамас",
+      "difficulty": 0,
+      "progressed": 15,
+      "percentage": 100
+    },
+    "44": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "45": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 0,
+      "progressed": 1,
+      "percentage": 25
+    }
+  },
+  "talents": [
+    [
+      12323,
+      12666,
+      12727,
+      12764,
+      12799,
+      12803,
+      12809,
+      12835,
+      12861,
+      12879,
+      12958,
+      12975,
+      16463,
+      16542,
+      20243,
+      29144,
+      29594,
+      29599,
+      29792,
+      46953,
+      46968,
+      47296,
+      50687,
+      50720,
+      57499,
+      58874,
+      59089,
+      61222
+    ],
+    [
+      12292,
+      12664,
+      12677,
+      12712,
+      12856,
+      12867,
+      12959,
+      12974,
+      13002,
+      16463,
+      16494,
+      20496,
+      20501,
+      23588,
+      23881,
+      29592,
+      29763,
+      29776,
+      29801,
+      46915,
+      46917,
+      56924,
+      56932,
+      61222
+    ],
+    [
+      12292,
+      12664,
+      12676,
+      12712,
+      12856,
+      12867,
+      12960,
+      12974,
+      13002,
+      16463,
+      16494,
+      20496,
+      20501,
+      23588,
+      23881,
+      29592,
+      29763,
+      29776,
+      29801,
+      46915,
+      46917,
+      56924,
+      56932,
+      61222
+    ]
+  ],
+  "glyphs": [
+    {
+      "slot": 1,
+      "name": "Символ блокирования",
+      "talentGroup": 0
+    },
+    {
+      "slot": 2,
+      "name": "Символ боевого крика",
+      "talentGroup": 0
+    },
+    {
+      "slot": 3,
+      "name": "Символ удара грома",
+      "talentGroup": 0
+    },
+    {
+      "slot": 4,
+      "name": "Символ раскола брони",
+      "talentGroup": 0
+    },
+    {
+      "slot": 5,
+      "name": "Символ кровавой ярости",
+      "talentGroup": 0
+    },
+    {
+      "slot": 6,
+      "name": "Символ провокации",
+      "talentGroup": 0
+    },
+    {
+      "slot": 1,
+      "name": "Символ удара героя",
+      "talentGroup": 1
+    },
+    {
+      "slot": 2,
+      "name": "Символ кровавой ярости",
+      "talentGroup": 1
+    },
+    {
+      "slot": 3,
+      "name": "Символ неоспоримой победы",
+      "talentGroup": 1
+    },
+    {
+      "slot": 4,
+      "name": "Символ вихря",
+      "talentGroup": 1
+    },
+    {
+      "slot": 5,
+      "name": "Символ боевого крика",
+      "talentGroup": 1
+    },
+    {
+      "slot": 6,
+      "name": "Символ рассечения",
+      "talentGroup": 1
+    },
+    {
+      "slot": 1,
+      "name": "Символ вихря",
+      "talentGroup": 2
+    },
+    {
+      "slot": 2,
+      "name": "Символ боевого крика",
+      "talentGroup": 2
+    },
+    {
+      "slot": 3,
+      "name": "Символ неоспоримой победы",
+      "talentGroup": 2
+    },
+    {
+      "slot": 4,
+      "name": "Символ рассечения",
+      "talentGroup": 2
+    },
+    {
+      "slot": 5,
+      "name": "Символ кровавой ярости",
+      "talentGroup": 2
+    },
+    {
+      "slot": 6,
+      "name": "Символ удара героя",
+      "talentGroup": 2
+    }
+  ],
+  "challenge": {
+    "current_score": 482.583,
+    "keystone_level": 14
+  },
+  "latest_actions": [
+    {
+      "text": "🎁 Получил: Железный оберег",
+      "datetime": "2026-06-12T22:23:16.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Скипетр Ша'тар",
+      "datetime": "2026-06-12T21:00:17.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Перевязь кровавого призрака",
+      "datetime": "2026-06-12T21:00:16.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Барьер Скверны",
+      "datetime": "2026-06-12T21:00:15.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Килт Песни моря",
+      "datetime": "2026-06-12T20:12:53.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "⚔️ Победил: Магтеридон",
+      "datetime": "2026-06-12T18:23:37.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Груул Драконобой",
+      "datetime": "2026-06-12T17:54:45.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Король Молгар",
+      "datetime": "2026-06-12T17:42:28.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "🏆 Достижение: Обезвоживание",
+      "datetime": "2026-06-12T17:24:06.000000Z",
+      "type": "achievement"
+    },
+    {
+      "text": "🎁 Получил: Вышитые сапоги огня",
+      "datetime": "2026-06-11T22:14:48.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Перстень Отражающих лучей",
+      "datetime": "2026-06-11T18:47:43.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Боевые рукавицы Пробужденного",
+      "datetime": "2026-06-11T18:35:51.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Библиотечный нож для бумаги",
+      "datetime": "2026-06-11T18:33:32.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Боевые рукавицы Пробужденного",
+      "datetime": "2026-06-11T18:31:48.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Перчатки из шерсти великана",
+      "datetime": "2026-06-11T18:28:14.000000Z",
+      "type": "obtaineditem"
+    }
+  ]
+}

@@ -1,0 +1,534 @@
+{
+  "timestamp": "2026-06-14T20:30:05.720922",
+  "basic_info": {
+    "name": "Killershok",
+    "level": 80,
+    "class": "Шаман",
+    "race": "Ночнорожденный",
+    "ilvl": 247,
+    "category": "5-я (++) Категория",
+    "achievementPoints": 2440,
+    "guild": "Красавчики"
+  },
+  "equipment": [
+    {
+      "slot": "head",
+      "name": "Шлем Смерча",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "neck",
+      "name": "Подвеска мощи Расколотого Солнца",
+      "ilvl": 251,
+      "quality": 4
+    },
+    {
+      "slot": "shoulders",
+      "name": "Латные наплечники Смерча",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "back",
+      "name": "Плащ дикого хищника",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "chest",
+      "name": "Кираса Смерча",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "wrists",
+      "name": "Боевые наручи странника пустыни",
+      "ilvl": 251,
+      "quality": 4
+    },
+    {
+      "slot": "hands",
+      "name": "Рукавицы истребителя драконов",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "waist",
+      "name": "Прошитый Гронном ремень",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "legs",
+      "name": "Боевой килт Смерча",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "feet",
+      "name": "Башмаки мирового судьи",
+      "ilvl": 253,
+      "quality": 4
+    },
+    {
+      "slot": "finger1",
+      "name": "Фиалковый перстень искусного убийцы",
+      "ilvl": 258,
+      "quality": 4
+    },
+    {
+      "slot": "finger2",
+      "name": "Символ хитреца",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "trinket1",
+      "name": "Знак превосходства",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "trinket2",
+      "name": "Рог зверя",
+      "ilvl": 245,
+      "quality": 4
+    },
+    {
+      "slot": "mainhand",
+      "name": "Мясорезчик",
+      "ilvl": 251,
+      "quality": 4
+    },
+    {
+      "slot": "offhand",
+      "name": "Мясорезчик",
+      "ilvl": 251,
+      "quality": 4
+    },
+    {
+      "slot": "ranged",
+      "name": "Тотем колыхающейся земли",
+      "ilvl": 245,
+      "quality": 4
+    }
+  ],
+  "stats": {
+    "strength": 137,
+    "agility": 1251,
+    "stamina": 1534,
+    "intellect": 625,
+    "spirit": 161,
+    "armor": 10449,
+    "blockPct": 5,
+    "dodgePct": 18.9918,
+    "parryPct": 5,
+    "critPct": 42.1472,
+    "rangedCritPct": 26.1472,
+    "spellCritPct": 30.1642,
+    "attackPower": 6086,
+    "rangedAttackPower": 5174,
+    "spellPower": 0,
+    "resilience": 0,
+    "hitRating": 347,
+    "hasteRating": 564,
+    "armorPenetration": 49,
+    "spellPenetration": 0,
+    "manaRegen": 67.3181,
+    "defenseRating": 400,
+    "expertiseRating": 27
+  },
+  "professions": [
+    {
+      "name": "Ювелирное дело",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Инженерное дело",
+      "skill": 405,
+      "max": 450
+    },
+    {
+      "name": "Портняжное дело",
+      "skill": 423,
+      "max": 450
+    },
+    {
+      "name": "Алхимия",
+      "skill": 450,
+      "max": 450
+    },
+    {
+      "name": "Рыбная ловля",
+      "skill": 48,
+      "max": 75
+    },
+    {
+      "name": "Кулинария",
+      "skill": 12,
+      "max": 75
+    },
+    {
+      "name": "Первая помощь",
+      "skill": 26,
+      "max": 75
+    }
+  ],
+  "pvp": {
+    "rank": 0,
+    "rating": 0,
+    "week_games": 0,
+    "week_wins": 0,
+    "total_games": 0,
+    "total_wins": 0
+  },
+  "arena": [
+    {
+      "slot": 1,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    },
+    {
+      "slot": 2,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    },
+    {
+      "slot": 6,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    }
+  ],
+  "pve": {
+    "22": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 1,
+      "progressed": 3,
+      "percentage": 75
+    },
+    "23": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 0,
+      "progressed": 3,
+      "percentage": 75
+    },
+    "27": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 3,
+      "progressed": 4,
+      "percentage": 80
+    },
+    "28": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "29": {
+      "map_name": "Логово Груула",
+      "difficulty": 1,
+      "progressed": 2,
+      "percentage": 100
+    },
+    "30": {
+      "map_name": "Логово Магтеридона",
+      "difficulty": 1,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "31": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 1,
+      "progressed": 5,
+      "percentage": 100
+    },
+    "32": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 0,
+      "progressed": 5,
+      "percentage": 100
+    },
+    "33": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 1,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "34": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 0,
+      "progressed": 1,
+      "percentage": 100
+    },
+    "35": {
+      "map_name": "Каражан",
+      "difficulty": 0,
+      "progressed": 11,
+      "percentage": 100
+    },
+    "36": {
+      "map_name": "Ульдуар",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "37": {
+      "map_name": "Ульдуар",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "38": {
+      "map_name": "Наксрамас",
+      "difficulty": 3,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "39": {
+      "map_name": "Наксрамас",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "40": {
+      "map_name": "Око вечности",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "41": {
+      "map_name": "Око вечности",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "42": {
+      "map_name": "Наксрамас",
+      "difficulty": 1,
+      "progressed": 12,
+      "percentage": 80
+    },
+    "43": {
+      "map_name": "Наксрамас",
+      "difficulty": 0,
+      "progressed": 15,
+      "percentage": 100
+    },
+    "44": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "45": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 0,
+      "progressed": 1,
+      "percentage": 25
+    }
+  },
+  "talents": [
+    [
+      16108,
+      16161,
+      16164,
+      16268,
+      16284,
+      16305,
+      17364,
+      17489,
+      29080,
+      29086,
+      29180,
+      29193,
+      30798,
+      30809,
+      30814,
+      30819,
+      30823,
+      51522,
+      51527,
+      51532,
+      51533,
+      51885,
+      52456,
+      60103,
+      60188
+    ],
+    [
+      16041,
+      16108,
+      16112,
+      16116,
+      16161,
+      16164,
+      16166,
+      16305,
+      17489,
+      29000,
+      29080,
+      29180,
+      30665,
+      30674,
+      30679,
+      30706,
+      43338,
+      51470,
+      51482,
+      51486,
+      51490,
+      60188,
+      62101,
+      63372,
+      373658
+    ]
+  ],
+  "glyphs": [
+    {
+      "slot": 1,
+      "name": "Символ духа дикого волка",
+      "talentGroup": 0
+    },
+    {
+      "slot": 2,
+      "name": "Символ обновленной жизни",
+      "talentGroup": 0
+    },
+    {
+      "slot": 3,
+      "name": "Символ хождения по воде",
+      "talentGroup": 0
+    },
+    {
+      "slot": 4,
+      "name": "Символ удара бури",
+      "talentGroup": 0
+    },
+    {
+      "slot": 5,
+      "name": "Символ астрального возвращения",
+      "talentGroup": 0
+    },
+    {
+      "slot": 6,
+      "name": "Символ молнии",
+      "talentGroup": 0
+    },
+    {
+      "slot": 1,
+      "name": "Символ удара бури",
+      "talentGroup": 1
+    },
+    {
+      "slot": 2,
+      "name": "Символ хождения по воде",
+      "talentGroup": 1
+    },
+    {
+      "slot": 3,
+      "name": "Символ астрального возвращения",
+      "talentGroup": 1
+    },
+    {
+      "slot": 4,
+      "name": "Символ духа дикого волка",
+      "talentGroup": 1
+    },
+    {
+      "slot": 5,
+      "name": "Символ обновленной жизни",
+      "talentGroup": 1
+    },
+    {
+      "slot": 6,
+      "name": "Символ лавы",
+      "talentGroup": 1
+    }
+  ],
+  "challenge": {
+    "current_score": 635.468,
+    "keystone_level": 15
+  },
+  "latest_actions": [
+    {
+      "text": "⚔️ Победил: Четыре всадника",
+      "datetime": "2026-06-14T17:28:42.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Готик Жнец",
+      "datetime": "2026-06-14T17:20:21.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Инструктор Разувий",
+      "datetime": "2026-06-14T17:11:34.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Таддиус",
+      "datetime": "2026-06-14T17:05:43.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Глут",
+      "datetime": "2026-06-14T16:55:45.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Гроббулус",
+      "datetime": "2026-06-14T16:51:01.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Лоскутик",
+      "datetime": "2026-06-14T16:45:46.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Мексна",
+      "datetime": "2026-06-14T16:38:03.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Великая вдова Фарлина",
+      "datetime": "2026-06-14T16:33:25.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Ануб'Рекан",
+      "datetime": "2026-06-14T16:29:35.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "🎁 Получил: Поручи затухающего света",
+      "datetime": "2026-06-13T20:16:50.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "🎁 Получил: Отмщение Отрекшихся",
+      "datetime": "2026-06-13T16:48:39.000000Z",
+      "type": "obtaineditem"
+    },
+    {
+      "text": "⚔️ Победил: Ониксия",
+      "datetime": "2026-06-13T16:46:11.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Ануб'арак",
+      "datetime": "2026-06-13T16:35:13.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Валь'киры-близнецы",
+      "datetime": "2026-06-13T16:32:25.000000Z",
+      "type": "bosskill"
+    }
+  ]
+}

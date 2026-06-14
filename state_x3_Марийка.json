@@ -1,0 +1,482 @@
+{
+  "timestamp": "2026-06-14T20:30:03.454354",
+  "basic_info": {
+    "name": "Марийка",
+    "level": 80,
+    "class": "Шаман",
+    "race": "Драктир",
+    "ilvl": 222,
+    "category": "6-я  Категория",
+    "achievementPoints": 975,
+    "guild": "Красавчики"
+  },
+  "equipment": [
+    {
+      "slot": "head",
+      "name": "Шлем короля Дреда",
+      "ilvl": 200,
+      "quality": 3
+    },
+    {
+      "slot": "neck",
+      "name": "Талисман Дробителя",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "shoulders",
+      "name": "Мантия морского волка",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "back",
+      "name": "Птичий плащ Перьев",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "chest",
+      "name": "Мундир туманного покрова",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "wrists",
+      "name": "Окрашенные клановые наручники",
+      "ilvl": 213,
+      "quality": 4
+    },
+    {
+      "slot": "hands",
+      "name": "Пронизанные гневом рукавицы",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "waist",
+      "name": "Расписанный знаками кушак",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "legs",
+      "name": "Килт Песни бури",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "feet",
+      "name": "Вышитые сапоги огня",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "finger1",
+      "name": "Перстень Отражающих лучей",
+      "ilvl": 200,
+      "quality": 3
+    },
+    {
+      "slot": "finger2",
+      "name": "Кольцо безразличных стихий",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "trinket1",
+      "name": "Клык Тол'Гародской лисицы",
+      "ilvl": 232,
+      "quality": 4
+    },
+    {
+      "slot": "trinket2",
+      "name": "Сердце Пустоты",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "mainhand",
+      "name": "Неболом",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "offhand",
+      "name": "Перстень очищения Фаола",
+      "ilvl": 226,
+      "quality": 4
+    },
+    {
+      "slot": "ranged",
+      "name": "Тотем Громовержья",
+      "ilvl": 226,
+      "quality": 4
+    }
+  ],
+  "stats": {
+    "strength": 122,
+    "agility": 127,
+    "stamina": 1010,
+    "intellect": 983,
+    "spirit": 319,
+    "armor": 6763,
+    "blockPct": 5,
+    "dodgePct": 4.12537,
+    "parryPct": 0,
+    "critPct": 16.6782,
+    "rangedCritPct": 0.678173,
+    "spellCritPct": 25.3312,
+    "attackPower": 545,
+    "rangedAttackPower": 273,
+    "spellPower": 1506,
+    "resilience": 0,
+    "hitRating": 187,
+    "hasteRating": 365,
+    "armorPenetration": 0,
+    "spellPenetration": 0,
+    "manaRegen": 348.276,
+    "defenseRating": 400,
+    "expertiseRating": 0
+  },
+  "professions": [],
+  "pvp": {
+    "rank": 0,
+    "rating": 0,
+    "week_games": 0,
+    "week_wins": 0,
+    "total_games": 0,
+    "total_wins": 0
+  },
+  "arena": [
+    {
+      "slot": 1,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    },
+    {
+      "slot": 2,
+      "seasonGames": 1,
+      "seasonWins": 0,
+      "personalRating": 0
+    },
+    {
+      "slot": 6,
+      "seasonGames": 0,
+      "seasonWins": 0,
+      "personalRating": 0
+    }
+  ],
+  "pve": {
+    "22": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 1,
+      "progressed": 3,
+      "percentage": 75
+    },
+    "23": {
+      "map_name": "Склеп Аркавона",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "27": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 3,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "28": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "29": {
+      "map_name": "Логово Груула",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "30": {
+      "map_name": "Логово Магтеридона",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "31": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "32": {
+      "map_name": "Испытание крестоносца",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "33": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "34": {
+      "map_name": "Логово Ониксии",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "35": {
+      "map_name": "Каражан",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "36": {
+      "map_name": "Ульдуар",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "37": {
+      "map_name": "Ульдуар",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "38": {
+      "map_name": "Наксрамас",
+      "difficulty": 3,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "39": {
+      "map_name": "Наксрамас",
+      "difficulty": 2,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "40": {
+      "map_name": "Око вечности",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "41": {
+      "map_name": "Око вечности",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "42": {
+      "map_name": "Наксрамас",
+      "difficulty": 1,
+      "progressed": 6,
+      "percentage": 40
+    },
+    "43": {
+      "map_name": "Наксрамас",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "44": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 1,
+      "progressed": 0,
+      "percentage": 0
+    },
+    "45": {
+      "map_name": "Обсидиановое святилище",
+      "difficulty": 0,
+      "progressed": 0,
+      "percentage": 0
+    }
+  },
+  "talents": [
+    [
+      974,
+      16188,
+      16190,
+      16198,
+      16206,
+      16213,
+      16217,
+      16221,
+      16229,
+      16232,
+      16240,
+      16305,
+      17489,
+      29202,
+      30869,
+      30873,
+      51555,
+      51558,
+      51561,
+      51566,
+      51881,
+      51886,
+      55198,
+      61295
+    ],
+    [
+      16041,
+      16108,
+      16116,
+      16161,
+      16164,
+      16166,
+      16305,
+      16582,
+      17489,
+      28999,
+      29065,
+      29080,
+      29180,
+      30674,
+      30679,
+      30706,
+      43338,
+      51470,
+      51482,
+      51486,
+      51490,
+      60188,
+      62101,
+      63372,
+      373658
+    ]
+  ],
+  "glyphs": [
+    {
+      "slot": 1,
+      "name": "Символ тотема гнева",
+      "talentGroup": 0
+    },
+    {
+      "slot": 2,
+      "name": "Символ обновленной жизни",
+      "talentGroup": 0
+    },
+    {
+      "slot": 4,
+      "name": "Символ оружия языка пламени",
+      "talentGroup": 0
+    },
+    {
+      "slot": 1,
+      "name": "Символ тотема гнева",
+      "talentGroup": 1
+    },
+    {
+      "slot": 2,
+      "name": "Символ грома и молнии",
+      "talentGroup": 1
+    },
+    {
+      "slot": 3,
+      "name": "Символ обновленной жизни",
+      "talentGroup": 1
+    },
+    {
+      "slot": 4,
+      "name": "Символ оружия языка пламени",
+      "talentGroup": 1
+    },
+    {
+      "slot": 5,
+      "name": "Символ астрального возвращения",
+      "talentGroup": 1
+    },
+    {
+      "slot": 6,
+      "name": "Символ шока",
+      "talentGroup": 1
+    }
+  ],
+  "challenge": {
+    "current_score": null,
+    "keystone_level": 2
+  },
+  "latest_actions": [
+    {
+      "text": "⚔️ Победил: Четыре всадника",
+      "datetime": "2026-06-14T17:28:42.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Готик Жнец",
+      "datetime": "2026-06-14T17:20:21.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Инструктор Разувий",
+      "datetime": "2026-06-14T17:11:34.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Таддиус",
+      "datetime": "2026-06-14T17:05:43.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Глут",
+      "datetime": "2026-06-14T16:55:45.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Гроббулус",
+      "datetime": "2026-06-14T16:51:01.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Лоскутик",
+      "datetime": "2026-06-14T16:45:46.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Мексна",
+      "datetime": "2026-06-14T16:38:03.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Великая вдова Фарлина",
+      "datetime": "2026-06-14T16:33:25.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Ануб'Рекан",
+      "datetime": "2026-06-14T16:29:35.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Аркавон Страж Камня",
+      "datetime": "2026-06-14T15:32:07.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Эмалон Страж Бури",
+      "datetime": "2026-06-14T15:28:22.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "⚔️ Победил: Коралон Страж Огня",
+      "datetime": "2026-06-14T15:24:51.000000Z",
+      "type": "bosskill"
+    },
+    {
+      "text": "🏆 Достижение: Квартал Мерзости (25 игроков)",
+      "datetime": "2026-06-14T14:05:43.000000Z",
+      "type": "achievement"
+    },
+    {
+      "text": "🏆 Достижение: Порезать на лоскутики (25 игроков)",
+      "datetime": "2026-06-14T13:45:46.000000Z",
+      "type": "achievement"
+    }
+  ]
+}
