@@ -11,15 +11,29 @@ from datetime import datetime
 from urllib.parse import quote
 
 # ====== НАСТРОЙКИ ======
-TOKEN = os.environ.get('TOKEN', '8418251202:AAGbFvhQZoZrT6HDjPBhYKnx4dp98pmik9w')
+TOKEN = os.environ.get('8418251202:AAGbFvhQZoZrT6HDjPBhYKnx4dp98pmik9w')
 MY_CHAT_ID = os.environ.get('1038593672')
 
-# СООТВЕТСТВИЕ СЕРВЕРОВ И ИХ ID
-# Найдите ID для x1, x2 в DevTools (как для x3 нашли 22)
+# Проверка: если токен не задан — выходим с понятной ошибкой
+if not TOKEN:
+    print("❌ ОШИБКА: Переменная TOKEN не задана в Railway!", flush=True)
+    print("💡 Добавьте переменную TOKEN в Variables на Railway", flush=True)
+    sys.exit(1)
+
+if not MY_CHAT_ID:
+    print("❌ ОШИБКА: Переменная MY_CHAT_ID не задана в Railway!", flush=True)
+    sys.exit(1)
+
+print(f"✅ TOKEN получен (длина: {len(TOKEN)})", flush=True)
+print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
+
+# Теперь создаём бота
+bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
+
 SERVER_IDS = {
     'x3': 22,
-    'x1': 20,  # УТОЧНИТЕ этот номер!
-    'x2': 21,  # УТОЧНИТЕ этот номер!
+    'x1': 20,
+    'x2': 21,
 }
 
 CHARACTERS = [
@@ -34,17 +48,16 @@ DEBUG_MODE = True
 characters_states = {}
 monitoring_active = False
 
-# ====== ОБРАБОТКА ЗАВЕРШЕНИЯ (для Railway) ======
+# ====== ОБРАБОТКА ЗАВЕРШЕНИЯ ======
 def signal_handler(signum, frame):
-    print("🛑 Получен сигнал завершения, останавливаем бота...", flush=True)
+    print(" Получен сигнал завершения", flush=True)
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
-# ====== ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ ======
+# ====== ПОЛУЧЕНИЕ ДАННЫХ ======
 def extract_character_data(world, character):
-    """Получает ВСЕ данные о персонаже через API"""
     server_id = SERVER_IDS.get(world)
     if server_id is None:
         print(f"❌ Не найден ID для сервера {world}", flush=True)
@@ -53,7 +66,7 @@ def extract_character_data(world, character):
     api_url = f'https://sirus.su/api/base/{server_id}/character/{quote(character)}'
     
     try:
-        print(f"\n🌐 Запрос к API: {api_url}", flush=True)
+        print(f"\n🌐 Запрос: {api_url}", flush=True)
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -64,16 +77,10 @@ def extract_character_data(world, character):
         print(f"📡 Статус: {response.status_code}", flush=True)
         
         if response.status_code != 200:
-            print(f"❌ Ошибка API: {response.status_code}", flush=True)
+            print(f" Ошибка API: {response.status_code}", flush=True)
             return None
         
         data_json = response.json()
-        
-        # Сохраняем JSON для отладки
-        if DEBUG_MODE:
-            with open(f'debug_api_{character}.json', 'w', encoding='utf-8') as f:
-                json.dump(data_json, f, ensure_ascii=False, indent=2)
-            print(f"💾 JSON сохранен", flush=True)
         
         data = {
             'basic_info': {},
@@ -105,7 +112,7 @@ def extract_character_data(world, character):
         if DEBUG_MODE:
             print(f"👤 {data['basic_info']['name']}, ур. {data['basic_info']['level']}, ILvl {data['basic_info']['ilvl']}", flush=True)
         
-        # 2. Экипировка (это СПИСОК!)
+        # 2. Экипировка
         equipments = data_json.get('equipments', [])
         if isinstance(equipments, list):
             for item in equipments:
@@ -129,7 +136,7 @@ def extract_character_data(world, character):
         if DEBUG_MODE:
             print(f"⚡ Характеристики: {len(data['stats'])} параметров", flush=True)
         
-        # 4. Профессии (skill.value и skill.max)
+        # 4. Профессии
         professions = data_json.get('professions', [])
         if isinstance(professions, list):
             for prof in professions:
@@ -141,7 +148,6 @@ def extract_character_data(world, character):
                         'max': skill_data.get('max') if isinstance(skill_data, dict) else 0
                     })
         
-        # Вторичные навыки (рыбалка, кулинария)
         secondary_skills = data_json.get('secondarySkills', [])
         if isinstance(secondary_skills, list):
             for skill in secondary_skills:
@@ -178,7 +184,7 @@ def extract_character_data(world, character):
                     'seasonGames': team.get('seasonGames')
                 })
         
-        # 7. PvE (рейды)
+        # 7. PvE
         pve_data = data_json.get('pve', {})
         if isinstance(pve_data, dict):
             for raid_id, raid_info in pve_data.items():
@@ -197,7 +203,7 @@ def extract_character_data(world, character):
             'keystone_level': challenge_data.get('keystone_level')
         }
         
-        # 9. Таланты (упрощенно - список spell ID)
+        # 9. Таланты
         talents_data = data_json.get('characterTalents', [])
         if isinstance(talents_data, list):
             for group in talents_data:
@@ -216,7 +222,7 @@ def extract_character_data(world, character):
                         'talentGroup': glyph.get('talentGroup')
                     })
         
-        # 11. Последние действия (через отдельный API)
+        # 11. Последние действия
         try:
             actions_url = f'https://sirus.su/api/base/{world}/statistics/{quote(character)}/latest-actions'
             actions_response = requests.get(actions_url, headers=headers, timeout=15)
@@ -267,12 +273,10 @@ def load_state(world, character):
             return None
     return None
 
-# ====== СРАВНЕНИЕ ВСЕХ ДАННЫХ ======
+# ====== СРАВНЕНИЕ ======
 def compare_states(old_state, new_state):
-    """Сравнивает ВСЕ данные и возвращает список ВСЕХ изменений"""
     changes = []
     
-    # 1. Основная информация
     old_basic = old_state.get('basic_info', {})
     new_basic = new_state.get('basic_info', {})
     
@@ -284,7 +288,6 @@ def compare_states(old_state, new_state):
                      'achievementPoints': 'Очки достижений', 'guild': 'Гильдия'}
             changes.append(f"📊 **{names.get(key, key)}:** {old_val} → {new_val}")
     
-    # 2. Экипировка
     old_equip = {e['slot']: e['name'] for e in old_state.get('equipment', [])}
     new_equip = {e['slot']: e['name'] for e in new_state.get('equipment', [])}
     
@@ -300,7 +303,6 @@ def compare_states(old_state, new_state):
     if equip_changes:
         changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
     
-    # 3. Характеристики
     old_stats = old_state.get('stats', {})
     new_stats = new_state.get('stats', {})
     
@@ -324,7 +326,6 @@ def compare_states(old_state, new_state):
         if stat_changes:
             changes.append(f"⚡ **Характеристики:**\n" + "\n".join(stat_changes[:20]))
     
-    # 4. Профессии и навыки
     old_prof = {p['name']: p['skill'] for p in old_state.get('professions', [])}
     new_prof = {p['name']: p['skill'] for p in new_state.get('professions', [])}
     
@@ -337,7 +338,6 @@ def compare_states(old_state, new_state):
         if prof_changes:
             changes.append(f"🔨 **Профессии/навыки:**\n" + "\n".join(prof_changes))
     
-    # 5. PvP
     old_pvp = old_state.get('pvp', {})
     new_pvp = new_state.get('pvp', {})
     
@@ -350,7 +350,6 @@ def compare_states(old_state, new_state):
         if pvp_changes:
             changes.append(f"⚔️ **PvP:**\n" + "\n".join(pvp_changes))
     
-    # 6. Arena
     old_arena = {a['slot']: a['personalRating'] for a in old_state.get('arena', [])}
     new_arena = {a['slot']: a['personalRating'] for a in new_state.get('arena', [])}
     
@@ -358,11 +357,10 @@ def compare_states(old_state, new_state):
         arena_changes = []
         for slot in set(old_arena.keys()) | set(new_arena.keys()):
             if old_arena.get(slot) != new_arena.get(slot):
-                arena_changes.append(f"  • {slot}v{slot}: {old_arena.get(slot)} → {new_arena.get(slot)}")
+                arena_changes.append(f"  • Арена {slot}: {old_arena.get(slot)} → {new_arena.get(slot)}")
         if arena_changes:
             changes.append(f"🏟️ **Арена:**\n" + "\n".join(arena_changes))
     
-    # 7. Рейды
     old_pve = old_state.get('pve', {})
     new_pve = new_state.get('pve', {})
     
@@ -379,7 +377,6 @@ def compare_states(old_state, new_state):
     if pve_changes:
         changes.append(f"🏰 **Рейды:**\n" + "\n".join(pve_changes))
     
-    # 8. Мифик+
     old_challenge = old_state.get('challenge', {})
     new_challenge = new_state.get('challenge', {})
     
@@ -387,13 +384,11 @@ def compare_states(old_state, new_state):
         if old_challenge.get('keystone_level') != new_challenge.get('keystone_level'):
             changes.append(f"🗝️ **Мифик+ уровень:** {old_challenge.get('keystone_level')} → {new_challenge.get('keystone_level')}")
         if old_challenge.get('current_score') != new_challenge.get('current_score'):
-            changes.append(f"🗝️ **Мифик+ рейтинг:** {old_challenge.get('current_score')} → {new_challenge.get('current_score')}")
+            changes.append(f"️ **Мифик+ рейтинг:** {old_challenge.get('current_score')} → {new_challenge.get('current_score')}")
     
-    # 9. Таланты
     if old_state.get('talents') != new_state.get('talents'):
         changes.append(f"✨ **Таланты изменены**")
     
-    # 10. Глифы
     old_glyphs = {g['slot']: g['name'] for g in old_state.get('glyphs', []) if g.get('talentGroup') == 0}
     new_glyphs = {g['slot']: g['name'] for g in new_state.get('glyphs', []) if g.get('talentGroup') == 0}
     
@@ -403,9 +398,8 @@ def compare_states(old_state, new_state):
             if old_glyphs.get(slot) != new_glyphs.get(slot):
                 glyph_changes.append(f"  • Слот {slot}: {old_glyphs.get(slot, 'нет')} → {new_glyphs.get(slot, 'нет')}")
         if glyph_changes:
-            changes.append(f"📜 **Глифы:**\n" + "\n".join(glyph_changes))
+            changes.append(f" **Глифы:**\n" + "\n".join(glyph_changes))
     
-    # 11. Последние действия
     old_actions = [a['text'] for a in old_state.get('latest_actions', [])]
     new_actions = [a['text'] for a in new_state.get('latest_actions', [])]
     
@@ -416,7 +410,7 @@ def compare_states(old_state, new_state):
     
     return changes
 
-# ====== ПРОВЕРКА ИЗМЕНЕНИЙ ======
+# ====== ПРОВЕРКА ======
 def check_changes():
     global characters_states
     
@@ -476,7 +470,7 @@ def check_changes():
                         MY_CHAT_ID,
                         f"🚨 **Обнаружены изменения!**\n\n"
                         f"👤 Персонаж: *{character}*\n"
-                        f"🌍 Сервер: {world}\n"
+                        f" Сервер: {world}\n"
                         f"⏰ {datetime.now().strftime('%H:%M:%S')}\n\n{changes_text}",
                         parse_mode='Markdown'
                     )
@@ -494,7 +488,7 @@ def check_changes():
         import traceback
         traceback.print_exc()
 
-# ====== КОМАНДЫ БОТА ======
+# ====== КОМАНДЫ ======
 @bot.message_handler(commands=['start'])
 def start(message):
     print(f"📩 Команда /start от {message.chat.id}", flush=True)
@@ -506,7 +500,7 @@ def start(message):
         f"🔍 Отслеживается ВСЁ:\n"
         f"  • Экипировка\n"
         f"  • Характеристики\n"
-        f"  • Профессии и навыки (рыбалка и т.д.)\n"
+        f"  • Профессии и навыки\n"
         f"  • PvP и Арена\n"
         f"  • Рейды\n"
         f"  • Мифик+\n"
@@ -537,7 +531,7 @@ def stop_monitor(message):
         return
     monitoring_active = False
     bot.reply_to(message, "⏸ Мониторинг остановлен.")
-    print(f"⏸ Мониторинг выключен", flush=True)
+    print(f" Мониторинг выключен", flush=True)
 
 @bot.message_handler(commands=['check'])
 def manual_check(message):
@@ -555,7 +549,7 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(1)
 
-# ====== ГЛАВНЫЙ ЗАПУСК ======
+# ====== ЗАПУСК ======
 if __name__ == '__main__':
     print("🤖 Бот запущен!", flush=True)
     print(f"🔧 Режим отладки: {'ВКЛЮЧЕН' if DEBUG_MODE else 'ВЫКЛЮЧЕН'}", flush=True)
@@ -574,7 +568,6 @@ if __name__ == '__main__':
     
     print("✅ Бот готов к работе!", flush=True)
     
-    # Автопереподключение при ошибках
     while True:
         try:
             bot.infinity_polling(timeout=60, long_polling_timeout=60)
