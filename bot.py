@@ -5,14 +5,14 @@ import time
 import threading
 import json
 import os
+import signal
+import sys
 from datetime import datetime
 from urllib.parse import quote
 
 # ====== НАСТРОЙКИ ======
-TOKEN = '8418251202:AAGbFvhQZoZrT6HDjPBhYKnx4dp98pmik9w'
-bot = telebot.TeleBot(TOKEN)
-
-MY_CHAT_ID = '1038593672'
+TOKEN = os.environ.get('TOKEN', '8418251202:AAGbFvhQZoZrT6HDjPBhYKnx4dp98pmik9w')
+MY_CHAT_ID = os.environ.get('1038593672')
 
 # СООТВЕТСТВИЕ СЕРВЕРОВ И ИХ ID
 # Найдите ID для x1, x2 в DevTools (как для x3 нашли 22)
@@ -34,13 +34,20 @@ DEBUG_MODE = True
 characters_states = {}
 monitoring_active = False
 
+# ====== ОБРАБОТКА ЗАВЕРШЕНИЯ (для Railway) ======
+def signal_handler(signum, frame):
+    print("🛑 Получен сигнал завершения, останавливаем бота...", flush=True)
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 # ====== ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ ======
 def extract_character_data(world, character):
     """Получает ВСЕ данные о персонаже через API"""
-    
     server_id = SERVER_IDS.get(world)
     if server_id is None:
-        print(f" Не найден ID для сервера {world}", flush=True)
+        print(f"❌ Не найден ID для сервера {world}", flush=True)
         return None
     
     api_url = f'https://sirus.su/api/base/{server_id}/character/{quote(character)}'
@@ -53,8 +60,7 @@ def extract_character_data(world, character):
             'Accept': 'application/json'
         }
         
-        response = requests.get(api_url, headers=headers, timeout=15)
-        
+        response = requests.get(api_url, headers=headers, timeout=30)
         print(f"📡 Статус: {response.status_code}", flush=True)
         
         if response.status_code != 200:
@@ -63,13 +69,13 @@ def extract_character_data(world, character):
         
         data_json = response.json()
         
+        # Сохраняем JSON для отладки
         if DEBUG_MODE:
             with open(f'debug_api_{character}.json', 'w', encoding='utf-8') as f:
                 json.dump(data_json, f, ensure_ascii=False, indent=2)
             print(f"💾 JSON сохранен", flush=True)
         
         data = {
-            'timestamp': datetime.now().isoformat(),
             'basic_info': {},
             'equipment': [],
             'stats': {},
@@ -77,29 +83,29 @@ def extract_character_data(world, character):
             'pvp': {},
             'arena': [],
             'pve': {},
+            'challenge': {},
             'talents': [],
             'glyphs': [],
-            'challenge': {},
             'latest_actions': []
         }
         
         # 1. Основная информация
-        character_data = data_json.get('character', {})
+        char_info = data_json.get('character', {})
         data['basic_info'] = {
-            'name': character_data.get('name'),
-            'level': character_data.get('level'),
-            'class': character_data.get('className'),
-            'race': character_data.get('raceName'),
-            'ilvl': character_data.get('ilvl'),
-            'category': character_data.get('category'),
-            'achievementPoints': character_data.get('achievementPoints'),
-            'guild': character_data.get('guild', {}).get('name') if character_data.get('guild') else None
+            'name': char_info.get('name'),
+            'level': char_info.get('level'),
+            'class': char_info.get('className'),
+            'race': char_info.get('raceName'),
+            'ilvl': char_info.get('ilvl'),
+            'category': char_info.get('category'),
+            'achievementPoints': char_info.get('achievementPoints'),
+            'guild': char_info.get('guild', {}).get('name') if char_info.get('guild') else None
         }
         
         if DEBUG_MODE:
             print(f"👤 {data['basic_info']['name']}, ур. {data['basic_info']['level']}, ILvl {data['basic_info']['ilvl']}", flush=True)
         
-        # 2. Экипировка
+        # 2. Экипировка (это СПИСОК!)
         equipments = data_json.get('equipments', [])
         if isinstance(equipments, list):
             for item in equipments:
@@ -115,15 +121,15 @@ def extract_character_data(world, character):
             print(f"🎒 Экипировка: {len(data['equipment'])} предметов", flush=True)
         
         # 3. Характеристики
-        character_stats = data_json.get('character', {}).get('stats', {})
-        if isinstance(character_stats, dict):
-            for stat_key, value in character_stats.items():
-                data['stats'][stat_key] = value
+        stats = char_info.get('stats', {})
+        if isinstance(stats, dict):
+            for key, value in stats.items():
+                data['stats'][key] = value
         
         if DEBUG_MODE:
             print(f"⚡ Характеристики: {len(data['stats'])} параметров", flush=True)
         
-        # 4. Профессии и навыки
+        # 4. Профессии (skill.value и skill.max)
         professions = data_json.get('professions', [])
         if isinstance(professions, list):
             for prof in professions:
@@ -135,6 +141,7 @@ def extract_character_data(world, character):
                         'max': skill_data.get('max') if isinstance(skill_data, dict) else 0
                     })
         
+        # Вторичные навыки (рыбалка, кулинария)
         secondary_skills = data_json.get('secondarySkills', [])
         if isinstance(secondary_skills, list):
             for skill in secondary_skills:
@@ -147,31 +154,29 @@ def extract_character_data(world, character):
                     })
         
         if DEBUG_MODE:
-            print(f"🔨 Профессии: {[p['name'] for p in data['professions']]}", flush=True)
+            prof_names = [f"{p['name']}: {p['skill']}/{p['max']}" for p in data['professions']]
+            print(f"🔨 Профессии: {prof_names}", flush=True)
         
         # 5. PvP
         pvp_data = data_json.get('pvp', {})
-        if isinstance(pvp_data, dict):
-            data['pvp'] = {
-                'rank': pvp_data.get('rank'),
-                'rating': pvp_data.get('rating'),
-                'week_games': pvp_data.get('week_games'),
-                'week_wins': pvp_data.get('week_wins'),
-                'total_games': pvp_data.get('total_games'),
-                'total_wins': pvp_data.get('total_wins')
-            }
+        data['pvp'] = {
+            'rank': pvp_data.get('rank'),
+            'rating': pvp_data.get('rating'),
+            'week_games': pvp_data.get('week_games'),
+            'week_wins': pvp_data.get('week_wins'),
+            'total_games': pvp_data.get('total_games'),
+            'total_wins': pvp_data.get('total_wins')
+        }
         
         # 6. Arena
         arena_data = data_json.get('arena', [])
         if isinstance(arena_data, list):
             for team in arena_data:
-                if team:
-                    data['arena'].append({
-                        'slot': team.get('slot'),
-                        'seasonGames': team.get('seasonGames'),
-                        'seasonWins': team.get('seasonWins'),
-                        'personalRating': team.get('personalRating')
-                    })
+                data['arena'].append({
+                    'slot': team.get('slot'),
+                    'personalRating': team.get('personalRating'),
+                    'seasonGames': team.get('seasonGames')
+                })
         
         # 7. PvE (рейды)
         pve_data = data_json.get('pve', {})
@@ -185,38 +190,36 @@ def extract_character_data(world, character):
                         'percentage': raid_info.get('percentage')
                     }
         
-        # 8. Таланты (активные заклинания)
-        character_talents = data_json.get('characterTalents', [])
-        if isinstance(character_talents, list):
-            for talent_group in character_talents:
-                if isinstance(talent_group, list):
-                    spells = [t.get('spell') for t in talent_group if t.get('spell')]
+        # 8. Мифик+
+        challenge_data = data_json.get('challenge', {})
+        data['challenge'] = {
+            'current_score': challenge_data.get('current_score'),
+            'keystone_level': challenge_data.get('keystone_level')
+        }
+        
+        # 9. Таланты (упрощенно - список spell ID)
+        talents_data = data_json.get('characterTalents', [])
+        if isinstance(talents_data, list):
+            for group in talents_data:
+                if isinstance(group, list):
+                    spells = [t.get('spell') for t in group if t.get('spell')]
                     data['talents'].append(spells)
         
-        # 9. Глифы
+        # 10. Глифы
         glyphs_data = data_json.get('glyphs', [])
         if isinstance(glyphs_data, list):
             for glyph in glyphs_data:
                 if glyph and glyph.get('glyphData'):
-                    glyph_info = glyph.get('glyphData', {})
                     data['glyphs'].append({
                         'slot': glyph.get('glyphSlot'),
-                        'name': glyph_info.get('glyph_name'),
+                        'name': glyph['glyphData'].get('glyph_name'),
                         'talentGroup': glyph.get('talentGroup')
                     })
         
-        # 10. Мифик+ (Challenge)
-        challenge_data = data_json.get('challenge', {})
-        if isinstance(challenge_data, dict):
-            data['challenge'] = {
-                'current_score': challenge_data.get('current_score'),
-                'keystone_level': challenge_data.get('keystone_level')
-            }
-        
-        # 11. Последние действия
+        # 11. Последние действия (через отдельный API)
         try:
             actions_url = f'https://sirus.su/api/base/{world}/statistics/{quote(character)}/latest-actions'
-            actions_response = requests.get(actions_url, headers=headers, timeout=10)
+            actions_response = requests.get(actions_url, headers=headers, timeout=15)
             
             if actions_response.status_code == 200:
                 actions = actions_response.json()
@@ -231,25 +234,17 @@ def extract_character_data(world, character):
                         text = f"⚔️ Победил: {action_data.get('boss_name', 'босс')}"
                     elif action_type == 'achievement':
                         text = f"🏆 Достижение: {action_data.get('name', 'достижение')}"
-                    elif action_type == 'arenamatch':
-                        text = "🏟️ Арена"
-                    elif action_type == 'bgmatch':
-                        text = "⚔️ Поле боя"
                     else:
                         text = f"❓ {action_type}"
                     
-                    data['latest_actions'].append({
-                        'text': text,
-                        'datetime': datetime_str,
-                        'type': action_type
-                    })
+                    data['latest_actions'].append({'text': text, 'datetime': datetime_str})
         except Exception as e:
-            print(f"Ошибка при получении действий: {e}", flush=True)
+            print(f"⚠️ Ошибка получения действий: {e}", flush=True)
         
         return data
         
     except Exception as e:
-        print(f"❌ Общая ошибка: {e}", flush=True)
+        print(f"❌ Ошибка: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return None
@@ -259,8 +254,7 @@ def get_state_file(world, character):
     return f'state_{world}_{character}.json'
 
 def save_state(world, character, state):
-    filename = get_state_file(world, character)
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(get_state_file(world, character), 'w', encoding='utf-8') as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 def load_state(world, character):
@@ -282,46 +276,29 @@ def compare_states(old_state, new_state):
     old_basic = old_state.get('basic_info', {})
     new_basic = new_state.get('basic_info', {})
     
-    if old_basic != new_basic:
-        basic_changes = []
-        for key in set(old_basic.keys()) | set(new_basic.keys()):
-            old_val = old_basic.get(key)
-            new_val = new_basic.get(key)
-            if old_val != new_val:
-                key_names = {
-                    'ilvl': 'ILvl',
-                    'level': 'Уровень',
-                    'category': 'Категория',
-                    'achievementPoints': 'Очки достижений',
-                    'guild': 'Гильдия'
-                }
-                display_key = key_names.get(key, key)
-                basic_changes.append(f"  • {display_key}: {old_val} → {new_val}")
-        
-        if basic_changes:
-            changes.append(f"📊 **Основная информация:**\n" + "\n".join(basic_changes))
+    for key in ['ilvl', 'level', 'category', 'achievementPoints', 'guild']:
+        old_val = old_basic.get(key)
+        new_val = new_basic.get(key)
+        if old_val != new_val:
+            names = {'ilvl': 'ILvl', 'level': 'Уровень', 'category': 'Категория', 
+                     'achievementPoints': 'Очки достижений', 'guild': 'Гильдия'}
+            changes.append(f"📊 **{names.get(key, key)}:** {old_val} → {new_val}")
     
     # 2. Экипировка
     old_equip = {e['slot']: e['name'] for e in old_state.get('equipment', [])}
     new_equip = {e['slot']: e['name'] for e in new_state.get('equipment', [])}
     
-    if old_equip != new_equip:
-        equip_changes = []
-        
-        # Новые предметы
-        for slot in new_equip:
-            if slot not in old_equip:
-                equip_changes.append(f"  ➕ {slot}: {new_equip[slot]}")
-            elif old_equip[slot] != new_equip[slot]:
-                equip_changes.append(f"  🔄 {slot}: {old_equip[slot]} → {new_equip[slot]}")
-        
-        # Удалённые предметы
-        for slot in old_equip:
-            if slot not in new_equip:
-                equip_changes.append(f"  ➖ {slot}: {old_equip[slot]}")
-        
-        if equip_changes:
-            changes.append(f" **Экипировка:**\n" + "\n".join(equip_changes[:15]))
+    equip_changes = []
+    for slot in set(old_equip.keys()) | set(new_equip.keys()):
+        if slot not in old_equip:
+            equip_changes.append(f"  ➕ {slot}: {new_equip[slot]}")
+        elif slot not in new_equip:
+            equip_changes.append(f"  ➖ {slot}: {old_equip[slot]}")
+        elif old_equip[slot] != new_equip[slot]:
+            equip_changes.append(f"  🔄 {slot}: {old_equip[slot]} → {new_equip[slot]}")
+    
+    if equip_changes:
+        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
     
     # 3. Характеристики
     old_stats = old_state.get('stats', {})
@@ -330,41 +307,32 @@ def compare_states(old_state, new_state):
     if old_stats != new_stats:
         stat_changes = []
         stat_names = {
-            'strength': 'Сила',
-            'agility': 'Ловкость',
-            'stamina': 'Выносливость',
-            'intellect': 'Интеллект',
-            'spirit': 'Дух',
-            'armor': 'Броня',
-            'attackPower': 'Сила атаки',
-            'spellPower': 'Сила заклинаний',
-            'critPct': 'Крит (%)',
-            'hasteRating': 'Рейтинг скорости',
-            'hitRating': 'Рейтинг меткости',
-            'defenseRating': 'Рейтинг защиты'
+            'strength': 'Сила', 'agility': 'Ловкость', 'stamina': 'Выносливость',
+            'intellect': 'Интеллект', 'spirit': 'Дух', 'armor': 'Броня',
+            'spellPower': 'Сила заклинаний', 'attackPower': 'Сила атаки',
+            'critPct': 'Крит (%)', 'spellCritPct': 'Крит заклинаний (%)',
+            'hasteRating': 'Рейтинг скорости', 'hitRating': 'Рейтинг меткости',
+            'defenseRating': 'Рейтинг защиты', 'dodgePct': 'Уклонение (%)',
+            'manaRegen': 'Реген маны'
         }
         
         for key in set(old_stats.keys()) | set(new_stats.keys()):
-            old_val = old_stats.get(key)
-            new_val = new_stats.get(key)
-            if old_val != new_val:
-                display_name = stat_names.get(key, key)
-                stat_changes.append(f"  • {display_name}: {old_val} → {new_val}")
+            if old_stats.get(key) != new_stats.get(key):
+                name = stat_names.get(key, key)
+                stat_changes.append(f"  • {name}: {old_stats.get(key, 'N/A')} → {new_stats.get(key, 'N/A')}")
         
         if stat_changes:
             changes.append(f"⚡ **Характеристики:**\n" + "\n".join(stat_changes[:20]))
     
-    # 4. Профессии
+    # 4. Профессии и навыки
     old_prof = {p['name']: p['skill'] for p in old_state.get('professions', [])}
     new_prof = {p['name']: p['skill'] for p in new_state.get('professions', [])}
     
     if old_prof != new_prof:
         prof_changes = []
         for name in set(old_prof.keys()) | set(new_prof.keys()):
-            old_val = old_prof.get(name)
-            new_val = new_prof.get(name)
-            if old_val != new_val:
-                prof_changes.append(f"  • {name}: {old_val} → {new_val}")
+            if old_prof.get(name) != new_prof.get(name):
+                prof_changes.append(f"  • {name}: {old_prof.get(name, 'N/A')} → {new_prof.get(name, 'N/A')}")
         
         if prof_changes:
             changes.append(f"🔨 **Профессии/навыки:**\n" + "\n".join(prof_changes))
@@ -375,20 +343,10 @@ def compare_states(old_state, new_state):
     
     if old_pvp != new_pvp:
         pvp_changes = []
-        for key in ['rating', 'rank', 'week_games', 'week_wins', 'total_games', 'total_wins']:
-            old_val = old_pvp.get(key)
-            new_val = new_pvp.get(key)
-            if old_val != new_val:
-                key_names = {
-                    'rating': 'Рейтинг',
-                    'rank': 'Ранг',
-                    'week_games': 'Игры за неделю',
-                    'week_wins': 'Победы за неделю',
-                    'total_games': 'Всего игр',
-                    'total_wins': 'Всего побед'
-                }
-                pvp_changes.append(f"  • {key_names.get(key, key)}: {old_val} → {new_val}")
-        
+        for key in ['rating', 'rank', 'week_games', 'week_wins']:
+            if old_pvp.get(key) != new_pvp.get(key):
+                names = {'rating': 'Рейтинг', 'rank': 'Ранг', 'week_games': 'Игры/нед', 'week_wins': 'Победы/нед'}
+                pvp_changes.append(f"  • {names.get(key, key)}: {old_pvp.get(key)} → {new_pvp.get(key)}")
         if pvp_changes:
             changes.append(f"⚔️ **PvP:**\n" + "\n".join(pvp_changes))
     
@@ -399,68 +357,53 @@ def compare_states(old_state, new_state):
     if old_arena != new_arena:
         arena_changes = []
         for slot in set(old_arena.keys()) | set(new_arena.keys()):
-            old_val = old_arena.get(slot)
-            new_val = new_arena.get(slot)
-            if old_val != new_val:
-                arena_changes.append(f"  • Арена {slot}: {old_val} → {new_val}")
-        
+            if old_arena.get(slot) != new_arena.get(slot):
+                arena_changes.append(f"  • {slot}v{slot}: {old_arena.get(slot)} → {new_arena.get(slot)}")
         if arena_changes:
-            changes.append(f"🏟️ **Arena:**\n" + "\n".join(arena_changes))
+            changes.append(f"🏟️ **Арена:**\n" + "\n".join(arena_changes))
     
-    # 7. PvE (рейды)
+    # 7. Рейды
     old_pve = old_state.get('pve', {})
     new_pve = new_state.get('pve', {})
     
-    if old_pve != new_pve:
-        pve_changes = []
-        for raid_id in set(old_pve.keys()) | set(new_pve.keys()):
-            old_raid = old_pve.get(raid_id, {})
-            new_raid = new_pve.get(raid_id, {})
-            
-            if old_raid.get('progressed') != new_raid.get('progressed') or old_raid.get('percentage') != new_raid.get('percentage'):
-                raid_name = new_raid.get('map_name', old_raid.get('map_name', f'Рейд {raid_id}'))
-                old_prog = old_raid.get('progressed', 0)
-                new_prog = new_raid.get('progressed', 0)
-                pve_changes.append(f"  • {raid_name}: {old_prog}/5 → {new_prog}/5")
+    pve_changes = []
+    for raid_id in set(old_pve.keys()) | set(new_pve.keys()):
+        old_raid = old_pve.get(raid_id, {})
+        new_raid = new_pve.get(raid_id, {})
         
-        if pve_changes:
-            changes.append(f"🏰 **Рейды:**\n" + "\n".join(pve_changes))
+        if old_raid.get('progressed') != new_raid.get('progressed'):
+            raid_name = new_raid.get('map_name', old_raid.get('map_name', f'Рейд {raid_id}'))
+            diff = new_raid.get('difficulty', old_raid.get('difficulty', ''))
+            pve_changes.append(f"  • {raid_name} ({diff}): {old_raid.get('progressed', 0)}/5 → {new_raid.get('progressed', 0)}/5")
+    
+    if pve_changes:
+        changes.append(f"🏰 **Рейды:**\n" + "\n".join(pve_changes))
     
     # 8. Мифик+
     old_challenge = old_state.get('challenge', {})
     new_challenge = new_state.get('challenge', {})
     
     if old_challenge != new_challenge:
-        challenge_changes = []
         if old_challenge.get('keystone_level') != new_challenge.get('keystone_level'):
-            challenge_changes.append(f"  • Уровень ключа: {old_challenge.get('keystone_level')} → {new_challenge.get('keystone_level')}")
+            changes.append(f"🗝️ **Мифик+ уровень:** {old_challenge.get('keystone_level')} → {new_challenge.get('keystone_level')}")
         if old_challenge.get('current_score') != new_challenge.get('current_score'):
-            challenge_changes.append(f"  • Рейтинг: {old_challenge.get('current_score')} → {new_challenge.get('current_score')}")
-        
-        if challenge_changes:
-            changes.append(f"🗝️ **Мифик+:**\n" + "\n".join(challenge_changes))
+            changes.append(f"🗝️ **Мифик+ рейтинг:** {old_challenge.get('current_score')} → {new_challenge.get('current_score')}")
     
     # 9. Таланты
-    old_talents = old_state.get('talents', [])
-    new_talents = new_state.get('talents', [])
-    
-    if old_talents != new_talents:
+    if old_state.get('talents') != new_state.get('talents'):
         changes.append(f"✨ **Таланты изменены**")
     
     # 10. Глифы
-    old_glyphs = {g['slot']: g['name'] for g in old_state.get('glyphs', [])}
-    new_glyphs = {g['slot']: g['name'] for g in new_state.get('glyphs', [])}
+    old_glyphs = {g['slot']: g['name'] for g in old_state.get('glyphs', []) if g.get('talentGroup') == 0}
+    new_glyphs = {g['slot']: g['name'] for g in new_state.get('glyphs', []) if g.get('talentGroup') == 0}
     
     if old_glyphs != new_glyphs:
         glyph_changes = []
         for slot in set(old_glyphs.keys()) | set(new_glyphs.keys()):
-            old_val = old_glyphs.get(slot)
-            new_val = new_glyphs.get(slot)
-            if old_val != new_val:
-                glyph_changes.append(f"  • Слот {slot}: {old_val} → {new_val}")
-        
+            if old_glyphs.get(slot) != new_glyphs.get(slot):
+                glyph_changes.append(f"  • Слот {slot}: {old_glyphs.get(slot, 'нет')} → {new_glyphs.get(slot, 'нет')}")
         if glyph_changes:
-            changes.append(f" **Глифы:**\n" + "\n".join(glyph_changes))
+            changes.append(f"📜 **Глифы:**\n" + "\n".join(glyph_changes))
     
     # 11. Последние действия
     old_actions = [a['text'] for a in old_state.get('latest_actions', [])]
@@ -469,7 +412,7 @@ def compare_states(old_state, new_state):
     if old_actions != new_actions:
         new_action_set = set(new_actions) - set(old_actions)
         if new_action_set:
-            changes.append(f"🎯 **Новые действия:**\n" + "\n".join([f"  • {action}" for action in list(new_action_set)[:5]]))
+            changes.append(f"🎯 **Новые действия:**\n" + "\n".join([f"  • {a}" for a in list(new_action_set)[:5]]))
     
     return changes
 
@@ -496,7 +439,16 @@ def check_changes():
             if char_key not in characters_states:
                 characters_states[char_key] = current_state
                 save_state(world, character, current_state)
-                bot.send_message(MY_CHAT_ID, f"✅ Мониторинг активирован для *{character}* ({world})!", parse_mode='Markdown')
+                
+                prof_list = "\n".join([f"  • {p['name']}: {p['skill']}/{p['max']}" for p in current_state.get('professions', [])])
+                bot.send_message(
+                    MY_CHAT_ID,
+                    f"✅ Мониторинг активирован для *{character}* ({world})!\n\n"
+                    f"👤 {current_state['basic_info']['name']}, ур. {current_state['basic_info']['level']}\n"
+                    f"📊 ILvl: {current_state['basic_info']['ilvl']}\n"
+                    f"🔨 Профессии:\n{prof_list}",
+                    parse_mode='Markdown'
+                )
                 print(f"  ✅ Первая проверка, состояние сохранено", flush=True)
                 continue
             
@@ -507,29 +459,25 @@ def check_changes():
                 changes_text = "\n\n".join(changes)
                 
                 if DEBUG_MODE:
-                    print(f"\n   НАЙДЕНЫ ИЗМЕНЕНИЯ ({len(changes)}):", flush=True)
-                    print(f"     {changes_text[:500]}...", flush=True)
+                    print(f"\n  🚨 НАЙДЕНЫ ИЗМЕНЕНИЯ ({len(changes)}):", flush=True)
                 
-                # Разбиваем длинные сообщения
-                if len(changes_text) > 3000:
-                    parts = [changes_text[i:i+3000] for i in range(0, len(changes_text), 3000)]
+                if len(changes_text) > 3500:
+                    parts = [changes_text[i:i+3500] for i in range(0, len(changes_text), 3500)]
                     for i, part in enumerate(parts, 1):
                         bot.send_message(
                             MY_CHAT_ID,
                             f"🚨 **Изменения у {character} ({i}/{len(parts)}):**\n\n"
                             f"🌍 Сервер: {world}\n"
-                            f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}\n\n"
-                            f"{part}",
+                            f"⏰ {datetime.now().strftime('%H:%M:%S')}\n\n{part}",
                             parse_mode='Markdown'
                         )
                 else:
                     bot.send_message(
                         MY_CHAT_ID,
-                        f" **Обнаружены изменения!**\n\n"
+                        f"🚨 **Обнаружены изменения!**\n\n"
                         f"👤 Персонаж: *{character}*\n"
                         f"🌍 Сервер: {world}\n"
-                        f"⏰ Время: {datetime.now().strftime('%H:%M:%S')}\n\n"
-                        f"{changes_text}",
+                        f"⏰ {datetime.now().strftime('%H:%M:%S')}\n\n{changes_text}",
                         parse_mode='Markdown'
                     )
                 print(f"  ⚠️ Отправлено уведомление!", flush=True)
@@ -555,16 +503,16 @@ def start(message):
         message.chat.id,
         f"👋 Привет! Я бот-монитор для Sirus.su\n\n"
         f"📌 Отслеживаю:\n{chars_list}\n\n"
-        f" Отслеживаются ВСЕ изменения:\n"
+        f"🔍 Отслеживается ВСЁ:\n"
         f"  • Экипировка\n"
         f"  • Характеристики\n"
-        f"  • Профессии и навыки\n"
-        f"  • PvP и Arena рейтинг\n"
-        f"  • Прогресс рейдов\n"
+        f"  • Профессии и навыки (рыбалка и т.д.)\n"
+        f"  • PvP и Арена\n"
+        f"  • Рейды\n"
         f"  • Мифик+\n"
         f"  • Таланты и глифы\n"
         f"  • Последние действия\n\n"
-        f" Команды:\n"
+        f"📋 Команды:\n"
         f"/monitor — запустить\n"
         f"/stop — остановить\n"
         f"/check — проверить сейчас",
@@ -574,36 +522,33 @@ def start(message):
 @bot.message_handler(commands=['monitor'])
 def start_monitor(message):
     global monitoring_active
-    print(f"📩 Команда /monitor от {message.chat.id}", flush=True)
     if str(message.chat.id) != str(MY_CHAT_ID):
         bot.reply_to(message, "⛔ Доступ запрещён!")
         return
     monitoring_active = True
     bot.reply_to(message, "✅ Мониторинг запущен! Проверка каждые 15 минут.")
-    print(f"  ✅ Мониторинг включен", flush=True)
+    print(f"✅ Мониторинг включен", flush=True)
 
 @bot.message_handler(commands=['stop'])
 def stop_monitor(message):
     global monitoring_active
-    print(f"📩 Команда /stop от {message.chat.id}", flush=True)
-    if str(message.chat.id) != str(MY_CHAT_ID):
-        bot.reply_to(message, " Доступ запрещён!")
-        return
-    monitoring_active = False
-    bot.reply_to(message, " Мониторинг остановлен.")
-    print(f"  ⏸ Мониторинг выключен", flush=True)
-
-@bot.message_handler(commands=['check'])
-def manual_check(message):
-    print(f"📩 Команда /check от {message.chat.id}", flush=True)
     if str(message.chat.id) != str(MY_CHAT_ID):
         bot.reply_to(message, "⛔ Доступ запрещён!")
         return
-    bot.reply_to(message, " Проверяю... Смотрите консоль!")
-    print(f"  🔍 Запускаю проверку...", flush=True)
+    monitoring_active = False
+    bot.reply_to(message, "⏸ Мониторинг остановлен.")
+    print(f"⏸ Мониторинг выключен", flush=True)
+
+@bot.message_handler(commands=['check'])
+def manual_check(message):
+    if str(message.chat.id) != str(MY_CHAT_ID):
+        bot.reply_to(message, "⛔ Доступ запрещён!")
+        return
+    bot.reply_to(message, "🔍 Проверяю... Смотрите консоль!")
+    print(f"🔍 Запускаю проверку...", flush=True)
     check_changes()
 
-# ====== ЗАПУСК ПЛАНИРОВЩИКА ======
+# ====== ПЛАНИРОВЩИК ======
 def run_scheduler():
     schedule.every(15).minutes.do(check_changes)
     while True:
@@ -628,4 +573,12 @@ if __name__ == '__main__':
     scheduler_thread.start()
     
     print("✅ Бот готов к работе!", flush=True)
-    bot.infinity_polling()
+    
+    # Автопереподключение при ошибках
+    while True:
+        try:
+            bot.infinity_polling(timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            print(f"⚠️ Ошибка polling: {e}", flush=True)
+            print("🔄 Переподключение через 5 секунд...", flush=True)
+            time.sleep(5)
