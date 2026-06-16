@@ -38,6 +38,7 @@ SERVER_IDS = {
 
 CHARACTERS = [
     {'world': 'x3', 'name': 'Марийка'},
+    {'world': 'x3', 'name': 'Толфрид'},
     {'world': 'x3', 'name': 'Killershok'},
     {'world': 'x3', 'name': 'Взбешённый'},
     {'world': 'x3', 'name': 'Obnimashka'}
