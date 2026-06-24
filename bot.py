@@ -50,7 +50,6 @@ signal.signal(signal.SIGINT, signal_handler)
 def extract_blizzard_data(region, realm, name):
     """Получает данные о персонаже через Raider.io API (без браузера!)"""
     
-    # URL для получения данных: экипировка, M+ рейтинг, прогресс рейдов
     url = f'https://raider.io/api/v1/characters/profile'
     params = {
         'region': region,
@@ -71,7 +70,6 @@ def extract_blizzard_data(region, realm, name):
         
         data_json = response.json()
         
-        # Сохраняем JSON для отладки
         if DEBUG_MODE:
             with open(f'debug_raiderio_{name}.json', 'w', encoding='utf-8') as f:
                 json.dump(data_json, f, ensure_ascii=False, indent=2)
