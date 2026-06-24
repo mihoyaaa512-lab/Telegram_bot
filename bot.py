@@ -1,37 +1,36 @@
 import telebot
-import os
-import sys
+import requests
+import schedule
 import time
 import threading
-import schedule
 import json
-import re
+import os
 import signal
+import sys
 from datetime import datetime, timedelta
 from urllib.parse import quote
-from playwright.sync_api import sync_playwright
 
-# ====== 1. ПРОВЕРКА ПЕРЕМЕННЫХ И СОЗДАНИЕ БОТА ======
+# ====== ПРОВЕРКА ПЕРЕМЕННЫХ ======
 print("🔍 Проверка переменных окружения...", flush=True)
 
 TOKEN = os.environ.get('TOKEN')
 MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
 
 if not TOKEN:
-    print("❌ ОШИБКА: Переменная TOKEN не задана в Railway!", flush=True)
+    print("❌ ОШИБКА: Переменная TOKEN не задана!", flush=True)
     sys.exit(1)
 
 if not MY_CHAT_ID:
-    print("❌ ОШИБКА: Переменная MY_CHAT_ID не задана в Railway!", flush=True)
+    print("❌ ОШИБКА: Переменная MY_CHAT_ID не задана!", flush=True)
     sys.exit(1)
 
 print(f"✅ TOKEN получен (длина: {len(TOKEN)})", flush=True)
 print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
-print("🤖 Объект бота успешно создан!", flush=True)
+print("🤖 Объект бота создан!", flush=True)
 
-# ====== 2. НАСТРОЙКИ ПЕРСОНАЖЕЙ ======
+# ====== НАСТРОЙКИ ПЕРСОНАЖЕЙ ======
 CHARACTERS = [
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'}
 ]
@@ -39,7 +38,7 @@ CHARACTERS = [
 DEBUG_MODE = True
 characters_states = {}
 
-# ====== 3. ОБРАБОТКА ЗАВЕРШЕНИЯ ======
+# ====== ОБРАБОТКА ЗАВЕРШЕНИЯ ======
 def signal_handler(signum, frame):
     print("🛑 Остановка бота...", flush=True)
     sys.exit(0)
@@ -47,106 +46,113 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
-# ====== 4. ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ (PLAYWRIGHT) ======
+# ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕZ RAIDER.IO API ======
 def extract_blizzard_data(region, realm, name):
-    """Заходит на страницу Blizzard и вытаскивает данные через регулярные выражения"""
-    url = f'https://worldofwarcraft.blizzard.com/{region}/character/{realm}/{quote(name)}'
+    """Получает данные о персонаже через Raider.io API (без браузера!)"""
     
-    data = {
-        'ilvl': None,
-        'stats': {},
-        'mythic_plus': None,
-        'raid_progress': {}
+    # URL для получения данных: экипировка, M+ рейтинг, прогресс рейдов
+    url = f'https://raider.io/api/v1/characters/profile'
+    params = {
+        'region': region,
+        'realm': realm,
+        'name': name,
+        'fields': 'gear,raid_progression,mythic_plus_scores_by_season:current,mythic_plus_ranks'
     }
     
     try:
-        print(f"\n🌐 Загружаю {name} ({realm}) через браузер...", flush=True)
+        print(f"\n🌐 Запрос к Raider.io API: {name} ({realm})", flush=True)
         
-        with sync_playwright() as p:
-            # Запускаем браузер с флагами для Railway/Docker
-            browser = p.chromium.launch(
-                headless=True, 
-                args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-            )
-            page = browser.new_page()
-            page.set_default_timeout(30000)
-            
-            # Переходим на страницу
-            page.goto(url, wait_until='domcontentloaded')
-            # Ждем загрузки динамического контента
-            page.wait_for_timeout(8000) 
-            
-            # Получаем весь HTML
-            page_text = page.content()
-            browser.close()
-            
-        # --- ПАРСИНГ ЧЕРЕЗ РЕГУЛЯРНЫЕ ВЫРАЖЕНИЯ ---
+        response = requests.get(url, params=params, timeout=30)
+        print(f"📡 Статус: {response.status_code}", flush=True)
         
-        # 1. Item Level (ILvl)
-        ilvl_match = re.search(r'Item Level\s*<[^>]*>(\d+)', page_text)
-        if ilvl_match:
-            data['ilvl'] = ilvl_match.group(1)
-        else:
-            ilvl_match = re.search(r'(\d{3})\s*Item Level', page_text)
-            if ilvl_match:
-                data['ilvl'] = ilvl_match.group(1)
-                
-        if DEBUG_MODE: print(f"📊 ILvl: {data['ilvl']}", flush=True)
+        if response.status_code != 200:
+            print(f"❌ Ошибка API: {response.status_code}", flush=True)
+            return None
         
-        # 2. Характеристики (ищем по английским названиям)
-        stats_to_find = {
-            'Intellect': 'Интеллект',
-            'Stamina': 'Выносливость', 
-            'Critical Strike': 'Крит. удар',
-            'Haste': 'Скорость',
-            'Mastery': 'Искусность',
-            'Versatility': 'Универсальность'
+        data_json = response.json()
+        
+        # Сохраняем JSON для отладки
+        if DEBUG_MODE:
+            with open(f'debug_raiderio_{name}.json', 'w', encoding='utf-8') as f:
+                json.dump(data_json, f, ensure_ascii=False, indent=2)
+            print(f"💾 JSON сохранен", flush=True)
+        
+        data = {
+            'basic_info': {},
+            'equipment': [],
+            'mythic_plus': {},
+            'raid_progress': {}
         }
         
-        for eng_name, ru_name in stats_to_find.items():
-            pattern = rf'{eng_name}[^<]*<[^>]*>([\d,]+\.?\d*)%?'
-            match = re.search(pattern, page_text)
-            if match:
-                val = match.group(1).replace(',', '')
-                data['stats'][ru_name] = val
-            else:
-                pattern2 = rf'{eng_name}\D+?(\d{2,})'
-                match2 = re.search(pattern2, page_text)
-                if match2:
-                    data['stats'][ru_name] = match2.group(1)
-                    
-        if DEBUG_MODE: print(f"⚡ Статы: {data['stats']}", flush=True)
+        # 1. Основная информация
+        data['basic_info'] = {
+            'name': data_json.get('name'),
+            'realm': data_json.get('realm'),
+            'race': data_json.get('race'),
+            'class': data_json.get('class'),
+            'active_spec': data_json.get('active_spec_name'),
+            'ilvl': data_json.get('item_level_equipped'),
+            'faction': data_json.get('faction')
+        }
         
-        # 3. Mythic+ Rating
-        mplus_match = re.search(r'Mythic\+ Rating\D+?([\d.]+)', page_text)
-        if mplus_match:
-            data['mythic_plus'] = mplus_match.group(1)
-            
-        if DEBUG_MODE: print(f"🗝️ Mythic+: {data['mythic_plus']}", flush=True)
+        if DEBUG_MODE:
+            print(f"👤 {data['basic_info']['name']}, {data['basic_info']['active_spec']} {data['basic_info']['class']}, ILvl {data['basic_info']['ilvl']}", flush=True)
+        
+        # 2. Экипировка
+        gear = data_json.get('gear', {})
+        items = gear.get('items', [])
+        
+        for item in items:
+            if item and item.get('name'):
+                data['equipment'].append({
+                    'slot': item.get('slot', {}).get('name', 'unknown'),
+                    'name': item.get('name'),
+                    'ilvl': item.get('item_level'),
+                    'quality': item.get('quality')
+                })
+        
+        if DEBUG_MODE:
+            print(f"🎒 Экипировка: {len(data['equipment'])} предметов", flush=True)
+        
+        # 3. Mythic+ рейтинг
+        mplus_seasons = data_json.get('mythic_plus_scores_by_season', [])
+        if mplus_seasons:
+            current_season = mplus_seasons[0]
+            data['mythic_plus'] = {
+                'score': current_season.get('scores', {}).get('all'),
+                'dps_score': current_season.get('scores', {}).get('dps'),
+                'healer_score': current_season.get('scores', {}).get('healer'),
+                'tank_score': current_season.get('scores', {}).get('tank')
+            }
+        
+        if DEBUG_MODE:
+            print(f"🗝️ Mythic+ рейтинг: {data['mythic_plus'].get('score')}", flush=True)
         
         # 4. Прогресс рейдов
-        raid_matches = re.findall(r'([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)?)\s+(\d+/\d+)', page_text)
-        for raid_name, progress in raid_matches:
-            if len(raid_name) > 5 and '/' in progress:
-                data['raid_progress'][raid_name] = progress
-                
-        if DEBUG_MODE: print(f"🏰 Рейды: {data['raid_progress']}", flush=True)
+        raid_progression = data_json.get('raid_progression', {})
+        for raid_name, progress in raid_progression.items():
+            data['raid_progress'][raid_name] = {
+                'summary': progress.get('summary'),
+                'total_bosses': progress.get('total_bosses'),
+                'normal_bosses_killed': progress.get('normal_bosses_killed'),
+                'heroic_bosses_killed': progress.get('heroic_bosses_killed'),
+                'mythic_bosses_killed': progress.get('mythic_bosses_killed')
+            }
         
-        # Сохраняем HTML для отладки
         if DEBUG_MODE:
-            with open(f'debug_blizzard_{name}.html', 'w', encoding='utf-8') as f:
-                f.write(page_text)
-            print(f" HTML сохранен в debug_blizzard_{name}.html", flush=True)
+            print(f"🏰 Рейды: {len(data['raid_progress'])} штук", flush=True)
+            for raid, prog in data['raid_progress'].items():
+                print(f"   • {raid}: {prog['summary']}", flush=True)
         
         return data
         
     except Exception as e:
-        print(f"❌ Ошибка при загрузке страницы: {e}", flush=True)
+        print(f"❌ Ошибка: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return None
 
-# ====== 5. СОХРАНЕНИЕ/ЗАГРУЗКА СОСТОЯНИЯ ======
+# ====== СОХРАНЕНИЕ/ЗАГРУЗКА ======
 def get_state_file(region, realm, name):
     return f'state_blizzard_{region}_{realm}_{name}.json'
 
@@ -164,42 +170,57 @@ def load_state(region, realm, name):
             return None
     return None
 
-# ====== 6. СРАВНЕНИЕ СОСТОЯНИЙ ======
+# ====== СРАВНЕНИЕ ======
 def compare_states(old, new):
     changes = []
     
     # ILvl
-    if old.get('ilvl') != new.get('ilvl') and new.get('ilvl'):
-        changes.append(f"📊 **ILvl:** {old.get('ilvl', '?')} → {new['ilvl']}")
-        
-    # Статы
-    if old.get('stats') != new.get('stats'):
-        stat_changes = []
-        for stat in new.get('stats', {}):
-            old_val = old.get('stats', {}).get(stat, '?')
-            new_val = new['stats'][stat]
-            if old_val != new_val:
-                stat_changes.append(f"  • {stat}: {old_val} → {new_val}")
-        if stat_changes:
-            changes.append(f" **Характеристики:**\n" + "\n".join(stat_changes))
-            
+    old_ilvl = old.get('basic_info', {}).get('ilvl')
+    new_ilvl = new.get('basic_info', {}).get('ilvl')
+    if old_ilvl != new_ilvl and new_ilvl:
+        changes.append(f"📊 **ILvl:** {old_ilvl} → {new_ilvl}")
+    
+    # Экипировка
+    old_equip = {e['slot']: e['name'] for e in old.get('equipment', [])}
+    new_equip = {e['slot']: e['name'] for e in new.get('equipment', [])}
+    
+    equip_changes = []
+    for slot in set(old_equip.keys()) | set(new_equip.keys()):
+        if slot not in old_equip:
+            equip_changes.append(f"  ➕ {slot}: {new_equip[slot]}")
+        elif slot not in new_equip:
+            equip_changes.append(f"  ➖ {slot}: {old_equip[slot]}")
+        elif old_equip[slot] != new_equip[slot]:
+            equip_changes.append(f"  🔄 {slot}: {old_equip[slot]} → {new_equip[slot]}")
+    
+    if equip_changes:
+        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
+    
     # Mythic+
-    if old.get('mythic_plus') != new.get('mythic_plus') and new.get('mythic_plus'):
-        changes.append(f"️ **Mythic+ Рейтинг:** {old.get('mythic_plus', '?')} → {new['mythic_plus']}")
-        
+    old_mplus = old.get('mythic_plus', {})
+    new_mplus = new.get('mythic_plus', {})
+    
+    if old_mplus.get('score') != new_mplus.get('score') and new_mplus.get('score'):
+        changes.append(f"🗝️ **Mythic+ рейтинг:** {old_mplus.get('score', '?')} → {new_mplus['score']}")
+    
     # Рейды
-    if old.get('raid_progress') != new.get('raid_progress'):
-        raid_changes = []
-        for raid, prog in new.get('raid_progress', {}).items():
-            old_prog = old.get('raid_progress', {}).get(raid, '?')
-            if old_prog != prog:
-                raid_changes.append(f"  • {raid}: {old_prog} → {prog}")
-        if raid_changes:
-            changes.append(f"🏰 **Рейды:**\n" + "\n".join(raid_changes))
-            
+    old_raids = old.get('raid_progress', {})
+    new_raids = new.get('raid_progress', {})
+    
+    raid_changes = []
+    for raid in set(old_raids.keys()) | set(new_raids.keys()):
+        old_summary = old_raids.get(raid, {}).get('summary', '?')
+        new_summary = new_raids.get(raid, {}).get('summary', '?')
+        
+        if old_summary != new_summary:
+            raid_changes.append(f"  • {raid}: {old_summary} → {new_summary}")
+    
+    if raid_changes:
+        changes.append(f"🏰 **Рейды:**\n" + "\n".join(raid_changes))
+    
     return changes
 
-# ====== 7. ПРОВЕРКА ИЗМЕНЕНИЙ ======
+# ====== ПРОВЕРКА ======
 def check_changes():
     global characters_states
     
@@ -220,7 +241,15 @@ def check_changes():
             characters_states[key] = current
             save_state(region, realm, name, current)
             
-            bot.send_message(MY_CHAT_ID, f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n ILvl: {current.get('ilvl', '?')}\n🗝️ Mythic+: {current.get('mythic_plus', '?')}", parse_mode='Markdown')
+            mplus_score = current.get('mythic_plus', {}).get('score', '?')
+            bot.send_message(
+                MY_CHAT_ID,
+                f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
+                f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
+                f"📊 ILvl: {current['basic_info']['ilvl']}\n"
+                f"🗝️ Mythic+: {mplus_score}",
+                parse_mode='Markdown'
+            )
             print(f"  ✅ Состояние сохранено", flush=True)
             continue
             
@@ -228,7 +257,12 @@ def check_changes():
         
         if changes:
             text = "\n\n".join(changes)
-            bot.send_message(MY_CHAT_ID, f"🚨 **Изменения у {name}!**\n {(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}\n\n{text}", parse_mode='Markdown')
+            bot.send_message(
+                MY_CHAT_ID,
+                f"🚨 **Изменения у {name}!**\n"
+                f"⏰ {(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}\n\n{text}",
+                parse_mode='Markdown'
+            )
             print(f"  ⚠️ Найдены изменения!", flush=True)
         else:
             print(f"  ✓ Без изменений", flush=True)
@@ -238,19 +272,26 @@ def check_changes():
         
     print(f"\n=== ПРОВЕРКА ЗАВЕРШЕНА ===\n", flush=True)
 
-# ====== 8. КОМАНДЫ БОТА ======
+# ====== КОМАНДЫ ======
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
-    bot.send_message(message.chat.id, "👋 Привет! Я бот для мониторинга Blizzard WoW.\n\nКоманды:\n/check — проверить сейчас\n/monitor — запустить автопроверку (каждые 15 мин)\n/stop — остановить")
+    bot.send_message(
+        message.chat.id,
+        "👋 Привет! Я бот для мониторинга Blizzard WoW через Raider.io.\n\n"
+        "📋 Команды:\n"
+        "/check — проверить сейчас\n"
+        "/monitor — автопроверка (15 мин)\n"
+        "/stop — остановить"
+    )
 
 @bot.message_handler(commands=['check'])
 def check_cmd(message):
-    bot.reply_to(message, "🔍 Запускаю браузер и проверяю... Это займет ~15 секунд.")
+    bot.reply_to(message, "🔍 Проверяю... ~5 сек.")
     check_changes()
 
 @bot.message_handler(commands=['monitor'])
 def monitor_cmd(message):
-    bot.reply_to(message, "✅ Автопроверка запущена (каждые 15 минут).")
+    bot.reply_to(message, "✅ Автопроверка запущена (каждые 15 мин).")
     if not hasattr(monitor_cmd, 'started'):
         schedule.every(15).minutes.do(check_changes)
         monitor_cmd.started = True
@@ -260,18 +301,16 @@ def stop_cmd(message):
     schedule.clear()
     bot.reply_to(message, "⏸ Автопроверка остановлена.")
 
-# ====== 9. ЗАПУСК ======
+# ====== ЗАПУСК ======
 if __name__ == '__main__':
-    print(" Бот Blizzard готов к работе!", flush=True)
+    print("🚀 Бот Blizzard (Raider.io API) готов!", flush=True)
     
-    # Загружаем старые состояния
     for char in CHARACTERS:
         key = f"{char['region']}_{char['realm']}_{char['name']}"
         state = load_state(char['region'], char['realm'], char['name'])
         if state:
             characters_states[key] = state
             
-    # Запускаем polling
     while True:
         try:
             bot.infinity_polling(timeout=60, long_polling_timeout=60)
