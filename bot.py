@@ -17,20 +17,21 @@ TOKEN = os.environ.get('TOKEN')
 MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
 
 if not TOKEN:
-    print("❌ ОШИБКА: Переменная TOKEN не задана!", flush=True)
+    print("❌ ОШИБКА: TOKEN не задан!", flush=True)
     sys.exit(1)
 
 if not MY_CHAT_ID:
-    print("❌ ОШИБКА: Переменная MY_CHAT_ID не задана!", flush=True)
+    print("❌ ОШИБКА: MY_CHAT_ID не задан!", flush=True)
     sys.exit(1)
 
 print(f"✅ TOKEN получен (длина: {len(TOKEN)})", flush=True)
 print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
-print("🤖 Объект бота создан!", flush=True)
+bot.delete_webhook(drop_pending_updates=True)
+print(" Бот создан!", flush=True)
 
-# ====== НАСТРОЙКИ ПЕРСОНАЖЕЙ ======
+# ====== ПЕРСОНАЖИ ======
 CHARACTERS = [
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'}
 ]
@@ -46,9 +47,9 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
-# ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕZ RAIDER.IO API ======
+# ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕЗ RAIDER.IO ======
 def extract_blizzard_data(region, realm, name):
-    """Получает данные о персонаже через Raider.io API (без браузера!)"""
+    """Получает данные о персонаже через Raider.io API"""
     
     url = f'https://raider.io/api/v1/characters/profile'
     params = {
@@ -59,21 +60,28 @@ def extract_blizzard_data(region, realm, name):
     }
     
     try:
-        print(f"\n🌐 Запрос к Raider.io API: {name} ({realm})", flush=True)
+        print(f"\n Запрос к Raider.io: {name} ({realm})", flush=True)
         
         response = requests.get(url, params=params, timeout=30)
         print(f"📡 Статус: {response.status_code}", flush=True)
         
         if response.status_code != 200:
             print(f"❌ Ошибка API: {response.status_code}", flush=True)
+            print(f"📄 Ответ: {response.text[:500]}", flush=True)
             return None
         
         data_json = response.json()
         
+        # Сохраняем JSON для отладки
         if DEBUG_MODE:
             with open(f'debug_raiderio_{name}.json', 'w', encoding='utf-8') as f:
                 json.dump(data_json, f, ensure_ascii=False, indent=2)
-            print(f"💾 JSON сохранен", flush=True)
+            print(f"💾 JSON сохранен в debug_raiderio_{name}.json", flush=True)
+        
+        # Проверяем, что персонаж найден
+        if 'name' not in data_json:
+            print(f"❌ Персонаж не найден: {response.text[:200]}", flush=True)
+            return None
         
         data = {
             'basic_info': {},
@@ -100,42 +108,52 @@ def extract_blizzard_data(region, realm, name):
         gear = data_json.get('gear', {})
         items = gear.get('items', [])
         
-        for item in items:
-            if item and item.get('name'):
-                data['equipment'].append({
-                    'slot': item.get('slot', {}).get('name', 'unknown'),
-                    'name': item.get('name'),
-                    'ilvl': item.get('item_level'),
-                    'quality': item.get('quality')
-                })
+        if isinstance(items, list):
+            for item in items:
+                # Проверяем, что item — это словарь, а не строка
+                if isinstance(item, dict) and item.get('name'):
+                    slot_info = item.get('slot', {})
+                    slot_name = slot_info.get('name', 'unknown') if isinstance(slot_info, dict) else str(slot_info)
+                    
+                    data['equipment'].append({
+                        'slot': slot_name,
+                        'name': item.get('name'),
+                        'ilvl': item.get('item_level'),
+                        'quality': item.get('quality')
+                    })
         
         if DEBUG_MODE:
             print(f"🎒 Экипировка: {len(data['equipment'])} предметов", flush=True)
         
         # 3. Mythic+ рейтинг
         mplus_seasons = data_json.get('mythic_plus_scores_by_season', [])
-        if mplus_seasons:
+        if isinstance(mplus_seasons, list) and mplus_seasons:
             current_season = mplus_seasons[0]
-            data['mythic_plus'] = {
-                'score': current_season.get('scores', {}).get('all'),
-                'dps_score': current_season.get('scores', {}).get('dps'),
-                'healer_score': current_season.get('scores', {}).get('healer'),
-                'tank_score': current_season.get('scores', {}).get('tank')
-            }
+            if isinstance(current_season, dict):
+                scores = current_season.get('scores', {})
+                if isinstance(scores, dict):
+                    data['mythic_plus'] = {
+                        'score': scores.get('all'),
+                        'dps_score': scores.get('dps'),
+                        'healer_score': scores.get('healer'),
+                        'tank_score': scores.get('tank')
+                    }
         
         if DEBUG_MODE:
-            print(f"🗝️ Mythic+ рейтинг: {data['mythic_plus'].get('score')}", flush=True)
+            print(f"️ Mythic+ рейтинг: {data['mythic_plus'].get('score')}", flush=True)
         
         # 4. Прогресс рейдов
         raid_progression = data_json.get('raid_progression', {})
-        for raid_name, progress in raid_progression.items():
-            data['raid_progress'][raid_name] = {
-                'summary': progress.get('summary'),
-                'total_bosses': progress.get('total_bosses'),
-                'normal_bosses_killed': progress.get('normal_bosses_killed'),
-                'heroic_bosses_killed': progress.get('heroic_bosses_killed'),
-                'mythic_bosses_killed': progress.get('mythic_bosses_killed')
-            }
+        if isinstance(raid_progression, dict):
+            for raid_name, progress in raid_progression.items():
+                if isinstance(progress, dict):
+                    data['raid_progress'][raid_name] = {
+                        'summary': progress.get('summary'),
+                        'total_bosses': progress.get('total_bosses'),
+                        'normal_bosses_killed': progress.get('normal_bosses_killed'),
+                        'heroic_bosses_killed': progress.get('heroic_bosses_killed'),
+                        'mythic_bosses_killed': progress.get('mythic_bosses_killed')
+                    }
         
         if DEBUG_MODE:
             print(f"🏰 Рейды: {len(data['raid_progress'])} штук", flush=True)
@@ -176,7 +194,7 @@ def compare_states(old, new):
     old_ilvl = old.get('basic_info', {}).get('ilvl')
     new_ilvl = new.get('basic_info', {}).get('ilvl')
     if old_ilvl != new_ilvl and new_ilvl:
-        changes.append(f"📊 **ILvl:** {old_ilvl} → {new_ilvl}")
+        changes.append(f" **ILvl:** {old_ilvl} → {new_ilvl}")
     
     # Экипировка
     old_equip = {e['slot']: e['name'] for e in old.get('equipment', [])}
@@ -192,7 +210,7 @@ def compare_states(old, new):
             equip_changes.append(f"  🔄 {slot}: {old_equip[slot]} → {new_equip[slot]}")
     
     if equip_changes:
-        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
+        changes.append(f" **Экипировка:**\n" + "\n".join(equip_changes[:15]))
     
     # Mythic+
     old_mplus = old.get('mythic_plus', {})
@@ -244,7 +262,7 @@ def check_changes():
                 MY_CHAT_ID,
                 f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
                 f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
-                f"📊 ILvl: {current['basic_info']['ilvl']}\n"
+                f" ILvl: {current['basic_info']['ilvl']}\n"
                 f"🗝️ Mythic+: {mplus_score}",
                 parse_mode='Markdown'
             )
@@ -275,8 +293,8 @@ def check_changes():
 def start_cmd(message):
     bot.send_message(
         message.chat.id,
-        "👋 Привет! Я бот для мониторинга Blizzard WoW через Raider.io.\n\n"
-        "📋 Команды:\n"
+        " Привет! Я бот для мониторинга Blizzard WoW через Raider.io.\n\n"
+        " Команды:\n"
         "/check — проверить сейчас\n"
         "/monitor — автопроверка (15 мин)\n"
         "/stop — остановить"
