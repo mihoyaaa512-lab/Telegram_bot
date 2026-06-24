@@ -32,8 +32,11 @@ bot.delete_webhook(drop_pending_updates=True)
 print(" Бот создан!", flush=True)
 
 # ====== НАСТРОЙКИ ======
+# ====== НАСТРОЙКИ ======
 CHARACTERS = [
-    {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'}
+    {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'},
+    {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Взбешённый'},
+    {'region': 'eu', 'realm': 'soulflayer', 'name': 'Мерриджей'}
 ]
 
 DEBUG_MODE = True
