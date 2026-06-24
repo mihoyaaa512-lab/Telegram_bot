@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from urllib.parse import quote
 
 # ====== ПРОВЕРКА ПЕРЕМЕННЫХ ======
-print("🔍 Проверка переменных окружения...", flush=True)
+print(" Проверка переменных окружения...", flush=True)
 
 TOKEN = os.environ.get('TOKEN')
 MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
@@ -29,7 +29,7 @@ print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 bot.delete_webhook(drop_pending_updates=True)
-print("🤖 Бот создан!", flush=True)
+print(" Бот создан!", flush=True)
 
 # ====== НАСТРОЙКИ ======
 CHARACTERS = [
@@ -49,14 +49,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕЗ RAIDER.IO ======
 def extract_blizzard_data(region, realm, name):
-    """Получает данные о персонаже через Raider.io API"""
-    
     url = f'https://raider.io/api/v1/characters/profile'
     params = {
         'region': region,
         'realm': realm,
         'name': name,
-        'fields': 'gear,raid_progression,mythic_plus_scores_by_season:current,mythic_plus_ranks'
+        'fields': 'gear,raid_progression,mythic_plus_scores_by_season:current'
     }
     
     try:
@@ -67,21 +65,13 @@ def extract_blizzard_data(region, realm, name):
         
         if response.status_code != 200:
             print(f"❌ Ошибка API: {response.status_code}", flush=True)
-            print(f"📄 Ответ: {response.text[:500]}", flush=True)
             return None
         
         data_json = response.json()
         
-        # Сохраняем JSON для отладки
         if DEBUG_MODE:
             with open(f'debug_raiderio_{name}.json', 'w', encoding='utf-8') as f:
                 json.dump(data_json, f, ensure_ascii=False, indent=2)
-            print(f"💾 JSON сохранен в debug_raiderio_{name}.json", flush=True)
-        
-        # Проверяем, что персонаж найден
-        if 'name' not in data_json:
-            print(f"❌ Персонаж не найден: {response.text[:200]}", flush=True)
-            return None
         
         data = {
             'basic_info': {},
@@ -100,7 +90,7 @@ def extract_blizzard_data(region, realm, name):
             'faction': data_json.get('faction')
         }
         
-        # 2. ILvl - берем из gear.item_level_equipped
+        # 2. ILvl
         gear = data_json.get('gear', {})
         if isinstance(gear, dict):
             data['basic_info']['ilvl'] = gear.get('item_level_equipped')
@@ -108,11 +98,10 @@ def extract_blizzard_data(region, realm, name):
         if DEBUG_MODE:
             print(f"👤 {data['basic_info']['name']}, {data['basic_info']['active_spec']} {data['basic_info']['class']}, ILvl {data['basic_info']['ilvl']}", flush=True)
         
-        # 3. Экипировка - gear.items это СЛОВАРЬ
+        # 3. Экипировка
         if isinstance(gear, dict):
             items = gear.get('items', {})
             if isinstance(items, dict):
-                # Итерируемся по значениям словаря
                 for slot_name, item in items.items():
                     if isinstance(item, dict) and item.get('name'):
                         data['equipment'].append({
@@ -157,8 +146,6 @@ def extract_blizzard_data(region, realm, name):
         
         if DEBUG_MODE:
             print(f"🏰 Рейды: {len(data['raid_progress'])} штук", flush=True)
-            for raid, prog in data['raid_progress'].items():
-                print(f"   • {raid}: {prog['summary']}", flush=True)
         
         return data
         
@@ -186,74 +173,55 @@ def load_state(region, realm, name):
             return None
     return None
 
-# ====== СРАВНЕНИЕ СОСТОЯНИЙ (ИСПРАВЛЕНО!) ======
+# ====== СРАВНЕНИЕ ======
 def compare_states(old, new):
-    """Сравнивает состояния и возвращает список изменений.
-    Теперь отслеживает: замену предметов, апгрейд ilvl, изменение качества."""
     changes = []
     
-    # 1. ILvl персонажа
+    # ILvl
     old_ilvl = old.get('basic_info', {}).get('ilvl')
     new_ilvl = new.get('basic_info', {}).get('ilvl')
     if old_ilvl != new_ilvl and new_ilvl:
         changes.append(f"📊 **ILvl:** {old_ilvl} → {new_ilvl}")
     
-    # 2. Экипировка - ИСПРАВЛЕНО: сравнивает имя, ilvl И качество!
+    # Экипировка
     old_equip = {e['slot']: {'name': e['name'], 'ilvl': e.get('ilvl'), 'quality': e.get('quality')} 
                  for e in old.get('equipment', [])}
     new_equip = {e['slot']: {'name': e['name'], 'ilvl': e.get('ilvl'), 'quality': e.get('quality')} 
                  for e in new.get('equipment', [])}
     
     equip_changes = []
-    all_slots = set(old_equip.keys()) | set(new_equip.keys())
-    
-    for slot in all_slots:
+    for slot in set(old_equip.keys()) | set(new_equip.keys()):
         if slot not in old_equip:
-            # Новый предмет (слот был пустой)
             item = new_equip[slot]
             equip_changes.append(f"  ➕ {slot}: {item['name']} (ilvl {item['ilvl']})")
         elif slot not in new_equip:
-            # Предмет убрали
             item = old_equip[slot]
             equip_changes.append(f"  ➖ {slot}: {item['name']} (ilvl {item['ilvl']})")
         else:
-            # Предмет в том же слоте — проверяем изменения
             old_item = old_equip[slot]
             new_item = new_equip[slot]
             
             if old_item['name'] != new_item['name']:
-                # Полная замена предмета
-                equip_changes.append(
-                    f"  🔄 {slot}: {old_item['name']} (ilvl {old_item['ilvl']}) → "
-                    f"{new_item['name']} (ilvl {new_item['ilvl']})"
-                )
+                equip_changes.append(f"  🔄 {slot}: {old_item['name']} (ilvl {old_item['ilvl']}) → {new_item['name']} (ilvl {new_item['ilvl']})")
             elif old_item['ilvl'] != new_item['ilvl']:
-                # Тот же предмет, но изменился ilvl (апгрейд/даунгрейд)
                 if new_item['ilvl'] > old_item['ilvl']:
-                    equip_changes.append(
-                        f"  📈 {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}"
-                    )
+                    equip_changes.append(f"   {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}")
                 else:
-                    equip_changes.append(
-                        f"  📉 {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}"
-                    )
+                    equip_changes.append(f"  📉 {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}")
             elif old_item['quality'] != new_item['quality']:
-                # Изменилось качество (например, крафт)
-                equip_changes.append(
-                    f"  ✨ {slot}: {new_item['name']} качество {old_item['quality']} → {new_item['quality']}"
-                )
+                equip_changes.append(f"  ✨ {slot}: {new_item['name']} качество {old_item['quality']} → {new_item['quality']}")
     
     if equip_changes:
-        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:20]))
+        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
     
-    # 3. Mythic+ рейтинг
+    # Mythic+
     old_mplus = old.get('mythic_plus', {})
     new_mplus = new.get('mythic_plus', {})
     
     if old_mplus.get('score') != new_mplus.get('score') and new_mplus.get('score'):
-        changes.append(f"🗝️ **Mythic+ рейтинг:** {old_mplus.get('score', '?')} → {new_mplus['score']}")
+        changes.append(f"️ **Mythic+ рейтинг:** {old_mplus.get('score', '?')} → {new_mplus['score']}")
     
-    # 4. Рейды
+    # Рейды
     old_raids = old.get('raid_progress', {})
     new_raids = new.get('raid_progress', {})
     
@@ -266,7 +234,7 @@ def compare_states(old, new):
             raid_changes.append(f"  • {raid}: {old_summary} → {new_summary}")
     
     if raid_changes:
-        changes.append(f"🏰 **Рейды:**\n" + "\n".join(raid_changes))
+        changes.append(f" **Рейды:**\n" + "\n".join(raid_changes))
     
     return changes
 
@@ -296,7 +264,7 @@ def check_changes():
                 MY_CHAT_ID,
                 f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
                 f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
-                f"📊 ILvl: {current['basic_info']['ilvl']}\n"
+                f" ILvl: {current['basic_info']['ilvl']}\n"
                 f"🗝️ Mythic+: {mplus_score}\n"
                 f"🎒 Экипировка: {len(current['equipment'])} предметов",
                 parse_mode='Markdown'
@@ -310,7 +278,7 @@ def check_changes():
             text = "\n\n".join(changes)
             bot.send_message(
                 MY_CHAT_ID,
-                f"🚨 **Изменения у {name}!**\n"
+                f" **Изменения у {name}!**\n"
                 f"⏰ {(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}\n\n{text}",
                 parse_mode='Markdown'
             )
@@ -370,3 +338,6 @@ if __name__ == '__main__':
     while True:
         try:
             bot.infinity_polling(timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            print(f"⚠️ Ошибка polling: {e}", flush=True)
+            time.sleep(5)
