@@ -29,9 +29,9 @@ print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 bot.delete_webhook(drop_pending_updates=True)
-print(" Бот создан!", flush=True)
+print("🤖 Бот создан!", flush=True)
 
-# ====== ПЕРСОНАЖИ ======
+# ====== НАСТРОЙКИ ======
 CHARACTERS = [
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'}
 ]
@@ -47,7 +47,7 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
-# ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕЗ RAIDER.IO ======
+# ====== ПОЛУЧЕНИЕ ДАННЫХ ЧЕРЕЗ RAIDER.IO API ======
 def extract_blizzard_data(region, realm, name):
     """Получает данные о персонаже через Raider.io API"""
     
@@ -60,7 +60,7 @@ def extract_blizzard_data(region, realm, name):
     }
     
     try:
-        print(f"\n Запрос к Raider.io: {name} ({realm})", flush=True)
+        print(f"\n🌐 Запрос к Raider.io API: {name} ({realm})", flush=True)
         
         response = requests.get(url, params=params, timeout=30)
         print(f"📡 Статус: {response.status_code}", flush=True)
@@ -72,17 +72,63 @@ def extract_blizzard_data(region, realm, name):
         
         data_json = response.json()
         
-        # Сохраняем JSON для отладки
+        # 🔥 ПОДРОБНЫЙ ВЫВОД СТРУКТУРЫ JSON В ЛОГИ
+        print(f"\n{'='*60}", flush=True)
+        print(f"📋 ПОЛНАЯ СТРУКТУРА JSON ОТ RAIDER.IO:", flush=True)
+        print(f"{'='*60}", flush=True)
+        
+        print(f" Ключи верхнего уровня: {list(data_json.keys())}", flush=True)
+        
+        # Основная информация
+        print(f"\n👤 Основная информация:", flush=True)
+        print(f"   name: {data_json.get('name')}", flush=True)
+        print(f"   realm: {data_json.get('realm')}", flush=True)
+        print(f"   race: {data_json.get('race')}", flush=True)
+        print(f"   class: {data_json.get('class')}", flush=True)
+        print(f"   active_spec_name: {data_json.get('active_spec_name')}", flush=True)
+        print(f"   item_level_equipped (ILvl): {data_json.get('item_level_equipped')}", flush=True)
+        print(f"   faction: {data_json.get('faction')}", flush=True)
+        
+        # Экипировка
+        gear = data_json.get('gear', {})
+        print(f"\n🎒 gear (тип: {type(gear).__name__}):", flush=True)
+        if isinstance(gear, dict):
+            print(f"   Ключи в gear: {list(gear.keys())}", flush=True)
+            items = gear.get('items', [])
+            print(f"   items тип: {type(items).__name__}, кол-во: {len(items) if isinstance(items, list) else 'N/A'}", flush=True)
+            if isinstance(items, list) and items:
+                print(f"   Первый предмет: {items[0]}", flush=True)
+                if isinstance(items[0], dict):
+                    print(f"   Ключи первого предмета: {list(items[0].keys())}", flush=True)
+        
+        # Mythic+ рейтинг
+        mplus = data_json.get('mythic_plus_scores_by_season', [])
+        print(f"\n️ mythic_plus_scores_by_season (тип: {type(mplus).__name__}, кол-во: {len(mplus) if isinstance(mplus, list) else 'N/A'}):", flush=True)
+        if isinstance(mplus, list) and mplus:
+            print(f"   Первый сезон: {mplus[0]}", flush=True)
+            if isinstance(mplus[0], dict):
+                print(f"   Ключи первого сезона: {list(mplus[0].keys())}", flush=True)
+                scores = mplus[0].get('scores', {})
+                print(f"   scores: {scores}", flush=True)
+        
+        # Рейды
+        raids = data_json.get('raid_progression', {})
+        print(f"\n🏰 raid_progression (тип: {type(raids).__name__}, кол-во рейдов: {len(raids) if isinstance(raids, dict) else 'N/A'}):", flush=True)
+        if isinstance(raids, dict):
+            for raid_name, progress in list(raids.items())[:3]:
+                print(f"   Рейд {raid_name}: {progress}", flush=True)
+        
+        print(f"\n{'='*60}", flush=True)
+        print(f"✅ КОНЕЦ СТРУКТУРЫ JSON", flush=True)
+        print(f"{'='*60}\n", flush=True)
+        
+        # Сохраняем полный JSON для отладки
         if DEBUG_MODE:
             with open(f'debug_raiderio_{name}.json', 'w', encoding='utf-8') as f:
                 json.dump(data_json, f, ensure_ascii=False, indent=2)
-            print(f"💾 JSON сохранен в debug_raiderio_{name}.json", flush=True)
+            print(f" Полный JSON сохранен в debug_raiderio_{name}.json", flush=True)
         
-        # Проверяем, что персонаж найден
-        if 'name' not in data_json:
-            print(f"❌ Персонаж не найден: {response.text[:200]}", flush=True)
-            return None
-        
+        # Формируем данные для бота
         data = {
             'basic_info': {},
             'equipment': [],
@@ -101,34 +147,25 @@ def extract_blizzard_data(region, realm, name):
             'faction': data_json.get('faction')
         }
         
-        if DEBUG_MODE:
-            print(f"👤 {data['basic_info']['name']}, {data['basic_info']['active_spec']} {data['basic_info']['class']}, ILvl {data['basic_info']['ilvl']}", flush=True)
-        
         # 2. Экипировка
-        gear = data_json.get('gear', {})
-        items = gear.get('items', [])
-        
-        if isinstance(items, list):
-            for item in items:
-                # Проверяем, что item — это словарь, а не строка
-                if isinstance(item, dict) and item.get('name'):
-                    slot_info = item.get('slot', {})
-                    slot_name = slot_info.get('name', 'unknown') if isinstance(slot_info, dict) else str(slot_info)
-                    
-                    data['equipment'].append({
-                        'slot': slot_name,
-                        'name': item.get('name'),
-                        'ilvl': item.get('item_level'),
-                        'quality': item.get('quality')
-                    })
-        
-        if DEBUG_MODE:
-            print(f"🎒 Экипировка: {len(data['equipment'])} предметов", flush=True)
+        if isinstance(gear, dict):
+            items = gear.get('items', [])
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and item.get('name'):
+                        slot_info = item.get('slot', {})
+                        slot_name = slot_info.get('name', 'unknown') if isinstance(slot_info, dict) else str(slot_info)
+                        
+                        data['equipment'].append({
+                            'slot': slot_name,
+                            'name': item.get('name'),
+                            'ilvl': item.get('item_level'),
+                            'quality': item.get('quality')
+                        })
         
         # 3. Mythic+ рейтинг
-        mplus_seasons = data_json.get('mythic_plus_scores_by_season', [])
-        if isinstance(mplus_seasons, list) and mplus_seasons:
-            current_season = mplus_seasons[0]
+        if isinstance(mplus, list) and mplus:
+            current_season = mplus[0]
             if isinstance(current_season, dict):
                 scores = current_season.get('scores', {})
                 if isinstance(scores, dict):
@@ -139,13 +176,9 @@ def extract_blizzard_data(region, realm, name):
                         'tank_score': scores.get('tank')
                     }
         
-        if DEBUG_MODE:
-            print(f"️ Mythic+ рейтинг: {data['mythic_plus'].get('score')}", flush=True)
-        
         # 4. Прогресс рейдов
-        raid_progression = data_json.get('raid_progression', {})
-        if isinstance(raid_progression, dict):
-            for raid_name, progress in raid_progression.items():
+        if isinstance(raids, dict):
+            for raid_name, progress in raids.items():
                 if isinstance(progress, dict):
                     data['raid_progress'][raid_name] = {
                         'summary': progress.get('summary'),
@@ -155,10 +188,11 @@ def extract_blizzard_data(region, realm, name):
                         'mythic_bosses_killed': progress.get('mythic_bosses_killed')
                     }
         
-        if DEBUG_MODE:
-            print(f"🏰 Рейды: {len(data['raid_progress'])} штук", flush=True)
-            for raid, prog in data['raid_progress'].items():
-                print(f"   • {raid}: {prog['summary']}", flush=True)
+        print(f"\n✅ Данные собраны:", flush=True)
+        print(f"   👤 {data['basic_info']['name']}, {data['basic_info']['active_spec']} {data['basic_info']['class']}, ILvl {data['basic_info']['ilvl']}", flush=True)
+        print(f"    Экипировка: {len(data['equipment'])} предметов", flush=True)
+        print(f"   🗝️ Mythic+ рейтинг: {data['mythic_plus'].get('score')}", flush=True)
+        print(f"   🏰 Рейды: {len(data['raid_progress'])} штук", flush=True)
         
         return data
         
@@ -194,7 +228,7 @@ def compare_states(old, new):
     old_ilvl = old.get('basic_info', {}).get('ilvl')
     new_ilvl = new.get('basic_info', {}).get('ilvl')
     if old_ilvl != new_ilvl and new_ilvl:
-        changes.append(f" **ILvl:** {old_ilvl} → {new_ilvl}")
+        changes.append(f"📊 **ILvl:** {old_ilvl} → {new_ilvl}")
     
     # Экипировка
     old_equip = {e['slot']: e['name'] for e in old.get('equipment', [])}
@@ -210,7 +244,7 @@ def compare_states(old, new):
             equip_changes.append(f"  🔄 {slot}: {old_equip[slot]} → {new_equip[slot]}")
     
     if equip_changes:
-        changes.append(f" **Экипировка:**\n" + "\n".join(equip_changes[:15]))
+        changes.append(f"🎒 **Экипировка:**\n" + "\n".join(equip_changes[:15]))
     
     # Mythic+
     old_mplus = old.get('mythic_plus', {})
@@ -232,7 +266,7 @@ def compare_states(old, new):
             raid_changes.append(f"  • {raid}: {old_summary} → {new_summary}")
     
     if raid_changes:
-        changes.append(f"🏰 **Рейды:**\n" + "\n".join(raid_changes))
+        changes.append(f" **Рейды:**\n" + "\n".join(raid_changes))
     
     return changes
 
@@ -262,8 +296,8 @@ def check_changes():
                 MY_CHAT_ID,
                 f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
                 f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
-                f" ILvl: {current['basic_info']['ilvl']}\n"
-                f"🗝️ Mythic+: {mplus_score}",
+                f"📊 ILvl: {current['basic_info']['ilvl']}\n"
+                f"️ Mythic+: {mplus_score}",
                 parse_mode='Markdown'
             )
             print(f"  ✅ Состояние сохранено", flush=True)
@@ -293,8 +327,8 @@ def check_changes():
 def start_cmd(message):
     bot.send_message(
         message.chat.id,
-        " Привет! Я бот для мониторинга Blizzard WoW через Raider.io.\n\n"
-        " Команды:\n"
+        "👋 Привет! Я бот для мониторинга Blizzard WoW через Raider.io.\n\n"
+        "📋 Команды:\n"
         "/check — проверить сейчас\n"
         "/monitor — автопроверка (15 мин)\n"
         "/stop — остановить"
