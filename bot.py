@@ -6,11 +6,12 @@ import threading
 import schedule
 import json
 import re
+import signal
 from datetime import datetime, timedelta
 from urllib.parse import quote
 from playwright.sync_api import sync_playwright
 
-# ====== 1. ПОЛУЧЕНИЕ ПЕРЕМЕННЫХ И СОЗДАНИЕ БОТА ======
+# ====== 1. ПРОВЕРКА ПЕРЕМЕННЫХ И СОЗДАНИЕ БОТА ======
 print("🔍 Проверка переменных окружения...", flush=True)
 
 TOKEN = os.environ.get('TOKEN')
@@ -18,7 +19,6 @@ MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
 
 if not TOKEN:
     print("❌ ОШИБКА: Переменная TOKEN не задана в Railway!", flush=True)
-    print(" Зайдите в Railway -> Variables и добавьте TOKEN", flush=True)
     sys.exit(1)
 
 if not MY_CHAT_ID:
@@ -28,7 +28,6 @@ if not MY_CHAT_ID:
 print(f"✅ TOKEN получен (длина: {len(TOKEN)})", flush=True)
 print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
-# ВАЖНО: Создаем объект бота ЗДЕСЬ, до всех декораторов
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 print("🤖 Объект бота успешно создан!", flush=True)
 
@@ -42,7 +41,7 @@ characters_states = {}
 
 # ====== 3. ОБРАБОТКА ЗАВЕРШЕНИЯ ======
 def signal_handler(signum, frame):
-    print(" Остановка бота...", flush=True)
+    print("🛑 Остановка бота...", flush=True)
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, signal_handler)
@@ -50,7 +49,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # ====== 4. ФУНКЦИЯ ПОЛУЧЕНИЯ ДАННЫХ (PLAYWRIGHT) ======
 def extract_blizzard_data(region, realm, name):
-    """Заходит на страницу Blizzard и вытаскивает данные"""
+    """Заходит на страницу Blizzard и вытаскивает данные через регулярные выражения"""
     url = f'https://worldofwarcraft.blizzard.com/{region}/character/{realm}/{quote(name)}'
     
     data = {
@@ -94,7 +93,7 @@ def extract_blizzard_data(region, realm, name):
                 
         if DEBUG_MODE: print(f"📊 ILvl: {data['ilvl']}", flush=True)
         
-        # 2. Характеристики
+        # 2. Характеристики (ищем по английским названиям)
         stats_to_find = {
             'Intellect': 'Интеллект',
             'Stamina': 'Выносливость', 
@@ -131,12 +130,20 @@ def extract_blizzard_data(region, realm, name):
             if len(raid_name) > 5 and '/' in progress:
                 data['raid_progress'][raid_name] = progress
                 
-        if DEBUG_MODE: print(f" Рейды: {data['raid_progress']}", flush=True)
+        if DEBUG_MODE: print(f"🏰 Рейды: {data['raid_progress']}", flush=True)
+        
+        # Сохраняем HTML для отладки
+        if DEBUG_MODE:
+            with open(f'debug_blizzard_{name}.html', 'w', encoding='utf-8') as f:
+                f.write(page_text)
+            print(f" HTML сохранен в debug_blizzard_{name}.html", flush=True)
         
         return data
         
     except Exception as e:
         print(f"❌ Ошибка при загрузке страницы: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
         return None
 
 # ====== 5. СОХРАНЕНИЕ/ЗАГРУЗКА СОСТОЯНИЯ ======
@@ -161,9 +168,11 @@ def load_state(region, realm, name):
 def compare_states(old, new):
     changes = []
     
+    # ILvl
     if old.get('ilvl') != new.get('ilvl') and new.get('ilvl'):
         changes.append(f"📊 **ILvl:** {old.get('ilvl', '?')} → {new['ilvl']}")
         
+    # Статы
     if old.get('stats') != new.get('stats'):
         stat_changes = []
         for stat in new.get('stats', {}):
@@ -174,9 +183,11 @@ def compare_states(old, new):
         if stat_changes:
             changes.append(f" **Характеристики:**\n" + "\n".join(stat_changes))
             
+    # Mythic+
     if old.get('mythic_plus') != new.get('mythic_plus') and new.get('mythic_plus'):
-        changes.append(f"🗝️ **Mythic+ Рейтинг:** {old.get('mythic_plus', '?')} → {new['mythic_plus']}")
+        changes.append(f"️ **Mythic+ Рейтинг:** {old.get('mythic_plus', '?')} → {new['mythic_plus']}")
         
+    # Рейды
     if old.get('raid_progress') != new.get('raid_progress'):
         raid_changes = []
         for raid, prog in new.get('raid_progress', {}).items():
@@ -251,7 +262,7 @@ def stop_cmd(message):
 
 # ====== 9. ЗАПУСК ======
 if __name__ == '__main__':
-    print("🚀 Бот Blizzard готов к работе!", flush=True)
+    print(" Бот Blizzard готов к работе!", flush=True)
     
     # Загружаем старые состояния
     for char in CHARACTERS:
@@ -265,5 +276,5 @@ if __name__ == '__main__':
         try:
             bot.infinity_polling(timeout=60, long_polling_timeout=60)
         except Exception as e:
-            print(f"️ Ошибка polling: {e}", flush=True)
+            print(f"⚠️ Ошибка polling: {e}", flush=True)
             time.sleep(5)
