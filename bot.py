@@ -8,7 +8,6 @@ import os
 import signal
 import sys
 from datetime import datetime, timedelta
-import pytz  # Добавьте: pip install pytz
 
 # ====== ПРОВЕРКА ПЕРЕМЕННЫХ ======
 print("✅ Проверка переменных окружения...", flush=True)
@@ -41,14 +40,6 @@ CHARACTERS = [
 DEBUG_MODE = True
 characters_states = {}
 monitoring_active = False
-monitor_thread = None
-
-# Часовой пояс Москвы
-MOSCOW_TZ = pytz.timezone('Europe/Moscow')
-
-def get_moscow_time():
-    """Получить текущее время по Москве"""
-    return datetime.now(MOSCOW_TZ)
 
 # ====== ОБРАБОТКА ЗАВЕРШЕНИЯ ======
 def signal_handler(signum, frame):
@@ -259,7 +250,7 @@ def compare_states(old, new):
 def check_changes():
     global characters_states
     
-    print(f"\n[{get_moscow_time().strftime('%H:%M:%S')}] === НАЧАЛО ПРОВЕРКИ ===", flush=True)
+    print(f"\n[{(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}] === НАЧАЛО ПРОВЕРКИ ===", flush=True)
     
     for char in CHARACTERS:
         region, realm, name = char['region'], char['realm'], char['name']
@@ -301,7 +292,7 @@ def check_changes():
                 bot.send_message(
                     MY_CHAT_ID,
                     f"⚠️ **Изменения у {name}!**\n"
-                    f"⏰ {get_moscow_time().strftime('%H:%M:%S')}\n\n{text}",
+                    f"⏰ {(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}\n\n{text}",
                     parse_mode='Markdown'
                 )
             except Exception as e:
@@ -320,9 +311,11 @@ def check_changes():
 def run_scheduler():
     """Запускает планировщик в отдельном потоке"""
     global monitoring_active
+    print("🔄 Планировщик запущен", flush=True)
     while monitoring_active:
         schedule.run_pending()
         time.sleep(1)
+    print("⏹ Планировщик остановлен", flush=True)
 
 # ====== КОМАНДЫ ======
 @bot.message_handler(commands=['start'])
@@ -337,8 +330,9 @@ def start_cmd(message):
         "  • Прогресс рейдов\n\n"
         "📋 Команды:\n"
         "/check — проверить сейчас\n"
-        "/monitor — автопроверка (15 мин)\n"
-        "/stop — остановить"
+        "/status — статус мониторинга\n"
+        "/stop — остановить мониторинг\n"
+        "/start_monitor — запустить мониторинг"
     )
 
 @bot.message_handler(commands=['check'])
@@ -346,36 +340,42 @@ def check_cmd(message):
     bot.reply_to(message, "🔍 Проверяю... ~5 сек.")
     check_changes()
 
-@bot.message_handler(commands=['monitor'])
-def monitor_cmd(message):
-    global monitoring_active, monitor_thread
+@bot.message_handler(commands=['status'])
+def status_cmd(message):
+    if monitoring_active:
+        bot.reply_to(message, "✅ Мониторинг активен (каждые 15 мин)")
+    else:
+        bot.reply_to(message, "⏸ Мониторинг остановлен")
+
+@bot.message_handler(commands=['start_monitor'])
+def start_monitor_cmd(message):
+    global monitoring_active
     
     if monitoring_active:
-        bot.reply_to(message, "⚠️ Автопроверка уже запущена!")
+        bot.reply_to(message, "⚠️ Мониторинг уже запущен!")
         return
     
     monitoring_active = True
     schedule.every(15).minutes.do(check_changes)
     
-    # Запускаем планировщик в отдельном потоке
     monitor_thread = threading.Thread(target=run_scheduler, daemon=True)
     monitor_thread.start()
     
-    bot.reply_to(message, "✅ Автопроверка запущена (каждые 15 мин).")
-    print("🔄 Планировщик запущен в отдельном потоке", flush=True)
+    bot.reply_to(message, "✅ Мониторинг запущен (каждые 15 мин)")
+    print("🔄 Мониторинг запущен по команде", flush=True)
 
 @bot.message_handler(commands=['stop'])
 def stop_cmd(message):
     global monitoring_active
     
     if not monitoring_active:
-        bot.reply_to(message, "⚠️ Автопроверка не была запущена.")
+        bot.reply_to(message, "⚠️ Мониторинг не был запущен.")
         return
     
     monitoring_active = False
     schedule.clear()
-    bot.reply_to(message, "⏸ Автопроверка остановлена.")
-    print("⏹ Планировщик остановлен", flush=True)
+    bot.reply_to(message, "⏸ Мониторинг остановлен.")
+    print("⏹ Мониторинг остановлен по команде", flush=True)
 
 # ====== ЗАПУСК ======
 if __name__ == '__main__':
@@ -388,6 +388,14 @@ if __name__ == '__main__':
         if state:
             characters_states[key] = state
             print(f"✅ Загружено состояние для {char['name']}", flush=True)
+    
+    # АВТОМАТИЧЕСКИЙ ЗАПУСК МОНИТОРИНГА ПРИ СТАРТЕ
+    print("🔄 Автоматический запуск мониторинга...", flush=True)
+    monitoring_active = True
+    schedule.every(15).minutes.do(check_changes)
+    
+    monitor_thread = threading.Thread(target=run_scheduler, daemon=True)
+    monitor_thread.start()
     
     print("📡 Запускаю polling...", flush=True)
     
