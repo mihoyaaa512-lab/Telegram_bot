@@ -8,10 +8,10 @@ import os
 import signal
 import sys
 from datetime import datetime, timedelta
-from urllib.parse import quote
+import pytz  # Добавьте: pip install pytz
 
 # ====== ПРОВЕРКА ПЕРЕМЕННЫХ ======
-print(" Проверка переменных окружения...", flush=True)
+print("✅ Проверка переменных окружения...", flush=True)
 
 TOKEN = os.environ.get('TOKEN')
 MY_CHAT_ID = os.environ.get('MY_CHAT_ID')
@@ -29,9 +29,8 @@ print(f"✅ MY_CHAT_ID = {MY_CHAT_ID}", flush=True)
 
 bot = telebot.TeleBot(TOKEN, parse_mode='Markdown')
 bot.delete_webhook(drop_pending_updates=True)
-print(" Бот создан!", flush=True)
+print("✅ Бот создан!", flush=True)
 
-# ====== НАСТРОЙКИ ======
 # ====== НАСТРОЙКИ ======
 CHARACTERS = [
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'},
@@ -41,10 +40,21 @@ CHARACTERS = [
 
 DEBUG_MODE = True
 characters_states = {}
+monitoring_active = False
+monitor_thread = None
+
+# Часовой пояс Москвы
+MOSCOW_TZ = pytz.timezone('Europe/Moscow')
+
+def get_moscow_time():
+    """Получить текущее время по Москве"""
+    return datetime.now(MOSCOW_TZ)
 
 # ====== ОБРАБОТКА ЗАВЕРШЕНИЯ ======
 def signal_handler(signum, frame):
     print("🛑 Остановка бота...", flush=True)
+    global monitoring_active
+    monitoring_active = False
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, signal_handler)
@@ -163,8 +173,11 @@ def get_state_file(region, realm, name):
     return f'state_blizzard_{region}_{realm}_{name}.json'
 
 def save_state(region, realm, name, state):
-    with open(get_state_file(region, realm, name), 'w', encoding='utf-8') as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    try:
+        with open(get_state_file(region, realm, name), 'w', encoding='utf-8') as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"❌ Ошибка сохранения состояния: {e}", flush=True)
 
 def load_state(region, realm, name):
     filename = get_state_file(region, realm, name)
@@ -172,7 +185,8 @@ def load_state(region, realm, name):
         try:
             with open(filename, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except Exception as e:
+            print(f"❌ Ошибка загрузки состояния: {e}", flush=True)
             return None
     return None
 
@@ -208,7 +222,7 @@ def compare_states(old, new):
                 equip_changes.append(f"  🔄 {slot}: {old_item['name']} (ilvl {old_item['ilvl']}) → {new_item['name']} (ilvl {new_item['ilvl']})")
             elif old_item['ilvl'] != new_item['ilvl']:
                 if new_item['ilvl'] > old_item['ilvl']:
-                    equip_changes.append(f"   {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}")
+                    equip_changes.append(f"  ⬆️ {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}")
                 else:
                     equip_changes.append(f"  📉 {slot}: {new_item['name']} ilvl {old_item['ilvl']} → {new_item['ilvl']}")
             elif old_item['quality'] != new_item['quality']:
@@ -222,7 +236,7 @@ def compare_states(old, new):
     new_mplus = new.get('mythic_plus', {})
     
     if old_mplus.get('score') != new_mplus.get('score') and new_mplus.get('score'):
-        changes.append(f"️ **Mythic+ рейтинг:** {old_mplus.get('score', '?')} → {new_mplus['score']}")
+        changes.append(f"🗝️ **Mythic+ рейтинг:** {old_mplus.get('score', '?')} → {new_mplus['score']}")
     
     # Рейды
     old_raids = old.get('raid_progress', {})
@@ -237,7 +251,7 @@ def compare_states(old, new):
             raid_changes.append(f"  • {raid}: {old_summary} → {new_summary}")
     
     if raid_changes:
-        changes.append(f" **Рейды:**\n" + "\n".join(raid_changes))
+        changes.append(f"🏰 **Рейды:**\n" + "\n".join(raid_changes))
     
     return changes
 
@@ -245,7 +259,7 @@ def compare_states(old, new):
 def check_changes():
     global characters_states
     
-    print(f"\n[{(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}] === НАЧАЛО ПРОВЕРКИ ===", flush=True)
+    print(f"\n[{get_moscow_time().strftime('%H:%M:%S')}] === НАЧАЛО ПРОВЕРКИ ===", flush=True)
     
     for char in CHARACTERS:
         region, realm, name = char['region'], char['realm'], char['name']
@@ -263,15 +277,19 @@ def check_changes():
             save_state(region, realm, name, current)
             
             mplus_score = current.get('mythic_plus', {}).get('score', '?')
-            bot.send_message(
-                MY_CHAT_ID,
-                f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
-                f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
-                f" ILvl: {current['basic_info']['ilvl']}\n"
-                f"🗝️ Mythic+: {mplus_score}\n"
-                f"🎒 Экипировка: {len(current['equipment'])} предметов",
-                parse_mode='Markdown'
-            )
+            try:
+                bot.send_message(
+                    MY_CHAT_ID,
+                    f"✅ Мониторинг *{name}* ({realm}) запущен!\n\n"
+                    f"👤 {current['basic_info']['active_spec']} {current['basic_info']['class']}\n"
+                    f"💪 ILvl: {current['basic_info']['ilvl']}\n"
+                    f"🗝️ Mythic+: {mplus_score}\n"
+                    f"🎒 Экипировка: {len(current['equipment'])} предметов",
+                    parse_mode='Markdown'
+                )
+            except Exception as e:
+                print(f"❌ Ошибка отправки сообщения: {e}", flush=True)
+            
             print(f"  ✅ Состояние сохранено", flush=True)
             continue
             
@@ -279,12 +297,16 @@ def check_changes():
         
         if changes:
             text = "\n\n".join(changes)
-            bot.send_message(
-                MY_CHAT_ID,
-                f" **Изменения у {name}!**\n"
-                f"⏰ {(datetime.now() + timedelta(hours=3)).strftime('%H:%M:%S')}\n\n{text}",
-                parse_mode='Markdown'
-            )
+            try:
+                bot.send_message(
+                    MY_CHAT_ID,
+                    f"⚠️ **Изменения у {name}!**\n"
+                    f"⏰ {get_moscow_time().strftime('%H:%M:%S')}\n\n{text}",
+                    parse_mode='Markdown'
+                )
+            except Exception as e:
+                print(f"❌ Ошибка отправки сообщения: {e}", flush=True)
+            
             print(f"  ⚠️ Найдены изменения!", flush=True)
         else:
             print(f"  ✓ Без изменений", flush=True)
@@ -293,6 +315,14 @@ def check_changes():
         save_state(region, realm, name, current)
         
     print(f"\n=== ПРОВЕРКА ЗАВЕРШЕНА ===\n", flush=True)
+
+# ====== ПОТОК ДЛЯ МОНИТОРИНГА ======
+def run_scheduler():
+    """Запускает планировщик в отдельном потоке"""
+    global monitoring_active
+    while monitoring_active:
+        schedule.run_pending()
+        time.sleep(1)
 
 # ====== КОМАНДЫ ======
 @bot.message_handler(commands=['start'])
@@ -318,26 +348,49 @@ def check_cmd(message):
 
 @bot.message_handler(commands=['monitor'])
 def monitor_cmd(message):
+    global monitoring_active, monitor_thread
+    
+    if monitoring_active:
+        bot.reply_to(message, "⚠️ Автопроверка уже запущена!")
+        return
+    
+    monitoring_active = True
+    schedule.every(15).minutes.do(check_changes)
+    
+    # Запускаем планировщик в отдельном потоке
+    monitor_thread = threading.Thread(target=run_scheduler, daemon=True)
+    monitor_thread.start()
+    
     bot.reply_to(message, "✅ Автопроверка запущена (каждые 15 мин).")
-    if not hasattr(monitor_cmd, 'started'):
-        schedule.every(15).minutes.do(check_changes)
-        monitor_cmd.started = True
+    print("🔄 Планировщик запущен в отдельном потоке", flush=True)
 
 @bot.message_handler(commands=['stop'])
 def stop_cmd(message):
+    global monitoring_active
+    
+    if not monitoring_active:
+        bot.reply_to(message, "⚠️ Автопроверка не была запущена.")
+        return
+    
+    monitoring_active = False
     schedule.clear()
     bot.reply_to(message, "⏸ Автопроверка остановлена.")
+    print("⏹ Планировщик остановлен", flush=True)
 
 # ====== ЗАПУСК ======
 if __name__ == '__main__':
     print("🚀 Бот Blizzard (Raider.io API) готов!", flush=True)
     
+    # Загружаем сохраненные состояния
     for char in CHARACTERS:
         key = f"{char['region']}_{char['realm']}_{char['name']}"
         state = load_state(char['region'], char['realm'], char['name'])
         if state:
             characters_states[key] = state
-            
+            print(f"✅ Загружено состояние для {char['name']}", flush=True)
+    
+    print("📡 Запускаю polling...", flush=True)
+    
     while True:
         try:
             bot.infinity_polling(timeout=60, long_polling_timeout=60)
