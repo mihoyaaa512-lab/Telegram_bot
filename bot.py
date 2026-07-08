@@ -35,6 +35,7 @@ CHARACTERS = [
     {'region': 'eu', 'realm': 'soulflayer', 'name': 'Бусечка'},
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Взбешённый'},
     {'region': 'eu', 'realm': 'soulflayer', 'name': 'Марийка'},
+    {'region': 'eu', 'realm': 'soulflayer', 'name': 'Марриэлька'},
     {'region': 'eu', 'realm': 'soulflayer', 'name': 'Мерриджей'}
 ]
 
