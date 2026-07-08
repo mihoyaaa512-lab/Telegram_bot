@@ -32,7 +32,7 @@ print("✅ Бот создан!", flush=True)
 
 # ====== НАСТРОЙКИ ======
 CHARACTERS = [
-    {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Атравлялка'},
+    {'region': 'eu', 'realm': 'soulflayer', 'name': 'Бусичка'},
     {'region': 'eu', 'realm': 'howling-fjord', 'name': 'Взбешённый'},
     {'region': 'eu', 'realm': 'soulflayer', 'name': 'Мерриджей'}
 ]
